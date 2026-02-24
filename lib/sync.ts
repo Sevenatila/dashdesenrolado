@@ -43,15 +43,13 @@ export class SyncService {
                 if (targetPlayerId) {
                     // Buscar eventos (plays, views)
                     const events = await vturb.getEventsByDay(targetPlayerId, dateStr, dateStr);
-                    if (events) {
-                        if (Array.isArray(events)) {
-                            const startedEvent = events.find((e: any) => e.event_name === 'started' || e.name === 'started');
-                            vturbMetrics.plays = startedEvent?.total || startedEvent?.count || startedEvent?.unique_devices || 0;
-                        } else if (events.started !== undefined) {
-                            vturbMetrics.plays = events.started?.total || events.started || 0;
-                        } else if (typeof events === 'object') {
-                            vturbMetrics.plays = events.total || events.count || events.plays || 0;
+                    if (events && Array.isArray(events) && events.length > 0) {
+                        // Formato real da VTurb: {"event":"started","total":35,"total_uniq_sessions":35,"total_uniq_device":35}
+                        const startedEvent = events.find((e: any) => e.event === 'started');
+                        if (startedEvent) {
+                            vturbMetrics.plays = startedEvent.total_uniq_device || startedEvent.total || 0;
                         }
+                        console.log(`[Sync] VTurb parsed: started=${JSON.stringify(startedEvent)}`);
                     }
 
                     // Buscar engajamento
