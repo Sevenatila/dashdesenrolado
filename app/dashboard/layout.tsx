@@ -16,8 +16,6 @@ export default function DashboardLayout({
 }) {
     const menuItems = [
         { name: "Geral", icon: LayoutDashboard, href: "/dashboard" },
-        { name: "Kiwify", icon: ShoppingCart, href: "/dashboard/kiwify" },
-        { name: "Hubla", icon: Users, href: "/dashboard/hubla" },
         { name: "Meta Ads", icon: TrendingUp, href: "/dashboard/meta" },
         { name: "VTurb", icon: Video, href: "/dashboard/vturb" },
         { name: "Configurações", icon: Settings, href: "/dashboard/settings" },
@@ -29,7 +27,7 @@ export default function DashboardLayout({
             <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
                 <div className="p-6">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        Quiz LK Dashboard
+                        Dash Desenrolado
                     </h1>
                 </div>
 
