@@ -46,7 +46,7 @@ export class VTurbClient {
                 headers: this.getHeaders(),
                 body: JSON.stringify({
                     player_id: playerId,
-                    event_names: ['started', 'finished', 'viewed'],
+                    events: ['started', 'finished', 'viewed'],
                     start_date: startDate,
                     end_date: endDate,
                     timezone: 'America/Sao_Paulo'
