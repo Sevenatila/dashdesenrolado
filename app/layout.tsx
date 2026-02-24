@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     "Descubra como fazer sua ex sentir sua falta em 60 segundos com uma mensagem psicológica.",
 };
 
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://connect.facebook.net" />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        {children}
+        <NextAuthProvider>
+          {children}
+        </NextAuthProvider>
         <Script id="utmify-pixel" strategy="afterInteractive">
           {`
             window.pixelId = "66b4ed3b88437ee533f62d0d";

@@ -1,8 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import {
     LayoutDashboard,
-    ShoppingCart,
-    Users,
     TrendingUp,
     Settings,
     LogOut,
@@ -20,6 +21,10 @@ export default function DashboardLayout({
         { name: "VTurb", icon: Video, href: "/dashboard/vturb" },
         { name: "Configurações", icon: Settings, href: "/dashboard/settings" },
     ];
+
+    const handleLogout = () => {
+        signOut({ callbackUrl: "/login" });
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
@@ -45,7 +50,10 @@ export default function DashboardLayout({
                 </nav>
 
                 <div className="p-4 border-t border-gray-200">
-                    <button className="flex items-center space-x-3 p-3 w-full text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-3 p-3 w-full text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+                    >
                         <LogOut className="w-5 h-5" />
                         <span className="font-medium">Sair</span>
                     </button>
