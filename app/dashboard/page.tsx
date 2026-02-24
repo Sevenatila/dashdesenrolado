@@ -11,6 +11,7 @@ import {
     Percent
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
+import SyncButton from "@/components/dashboard/SyncButton";
 import prisma from "@/lib/prisma";
 
 async function getMetrics() {
@@ -34,11 +35,14 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-8 pb-12">
             <div>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
-                    <span className="text-sm text-gray-500">
-                        Última atualização: {metrics?.date ? new Date(metrics.date).toLocaleDateString('pt-BR') : 'Sem dados'}
-                    </span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
+                        <p className="text-sm text-gray-500">
+                            Última atualização: {metrics?.date ? new Date(metrics.date).toLocaleDateString('pt-BR') : 'Sem dados'}
+                        </p>
+                    </div>
+                    <SyncButton />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

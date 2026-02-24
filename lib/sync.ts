@@ -36,7 +36,24 @@ export class SyncService {
             utmifyData = await utmify.getOrders(dateStr, dateStr);
         }
 
-        // 4. Atualizar DailyPerformance
+        // 4. Buscar VTurb (Métricas de VSL)
+        let vturbMetrics = { plays: 0, leadRetention: 0, engagement: 0, pitchRetention: 0 };
+        if (process.env.VTURB_API_KEY) {
+            const vturb = new VTurbClient(process.env.VTURB_API_KEY);
+            // O ID do vídeo deve vir de uma configuração, por enquanto usando o do quiz removido
+            const videoId = "68fda7c738d7cd51cf68c89a";
+            const stats = await vturb.getVideoMetrics(videoId);
+            if (stats) {
+                vturbMetrics = {
+                    plays: stats.plays || 0,
+                    leadRetention: stats.lead_retention || 0,
+                    engagement: stats.engagement || 0,
+                    pitchRetention: stats.pitch_retention || 0
+                };
+            }
+        }
+
+        // 5. Atualizar DailyPerformance
         await prisma.dailyPerformance.upsert({
             where: { date: new Date(dateStr) },
             update: {
@@ -46,7 +63,10 @@ export class SyncService {
                 receitaGerada: totalRevenue,
                 cpa: totalSales > 0 ? metaMetrics.spend / totalSales : 0,
                 ticketMedio: totalSales > 0 ? totalRevenue / totalSales : 0,
-                // Aqui poderíamos processar utmifyData para preencher métricas de upsell/backredirect
+                playsUnicosVSL: vturbMetrics.plays,
+                retencaoLeadVSL: vturbMetrics.leadRetention,
+                engajamentoVSL: vturbMetrics.engagement,
+                retencaoPitchVSL: vturbMetrics.pitchRetention,
             },
             create: {
                 date: new Date(dateStr),
@@ -56,6 +76,10 @@ export class SyncService {
                 receitaGerada: totalRevenue,
                 cpa: totalSales > 0 ? metaMetrics.spend / totalSales : 0,
                 ticketMedio: totalSales > 0 ? totalRevenue / totalSales : 0,
+                playsUnicosVSL: vturbMetrics.plays,
+                retencaoLeadVSL: vturbMetrics.leadRetention,
+                engajamentoVSL: vturbMetrics.engagement,
+                retencaoPitchVSL: vturbMetrics.pitchRetention,
             }
         });
 
