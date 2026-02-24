@@ -12,6 +12,7 @@ export default function SyncButton() {
     const handleSync = async () => {
         const start = searchParams.get("start");
         const end = searchParams.get("end");
+        const playerId = searchParams.get("player_id");
 
         const confirmMsg = start && end
             ? `Deseja sincronizar as métricas de ${start} até ${end}?`
@@ -21,8 +22,17 @@ export default function SyncButton() {
 
         setLoading(true);
         try {
-            const query = start && end ? `?start=${start}&end=${end}` : "";
+            const params = new URLSearchParams();
+            if (start && end) {
+                params.set("start", start);
+                params.set("end", end);
+            }
+            if (playerId) {
+                params.set("player_id", playerId);
+            }
+            const query = params.toString() ? `?${params.toString()}` : "";
             const res = await fetch(`/api/sync${query}`);
+
             const data = await res.json();
 
             if (res.ok) {

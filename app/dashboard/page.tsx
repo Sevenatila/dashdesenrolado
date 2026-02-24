@@ -13,6 +13,7 @@ import {
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import SyncButton from "@/components/dashboard/SyncButton";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
+import PlayerSelector from "@/components/dashboard/PlayerSelector";
 import prisma from "@/lib/prisma";
 
 async function getMetrics(start?: string, end?: string) {
@@ -86,6 +87,7 @@ export default async function DashboardPage({
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
+                        <PlayerSelector />
                         <DateRangePicker />
                         <SyncButton />
                     </div>

@@ -15,16 +15,17 @@ export async function GET(req: Request) {
         const start = searchParams.get("start");
         const end = searchParams.get("end");
         const date = searchParams.get("date");
+        const playerId = searchParams.get("player_id") || undefined;
 
         const syncService = new SyncService();
 
         if (start && end) {
-            console.log(`Manual Range Sync requested: ${start} to ${end}`);
-            await syncService.syncRange(start, end);
+            console.log(`Manual Range Sync requested: ${start} to ${end}, player: ${playerId || 'all'}`);
+            await syncService.syncRange(start, end, playerId);
         } else {
             const dateStr = date || start || new Date().toISOString().split('T')[0];
-            console.log(`Manual Day Sync requested for date: ${dateStr}`);
-            await syncService.syncDay(dateStr);
+            console.log(`Manual Day Sync requested for date: ${dateStr}, player: ${playerId || 'all'}`);
+            await syncService.syncDay(dateStr, playerId);
         }
 
         return NextResponse.json({
