@@ -84,14 +84,18 @@ export class SyncService {
 
                     // ===== ENGAJAMENTO =====
                     const engagement = await vturb.getEngagement(targetPlayerId, videoDuration, dateStr, dateStr);
-                    if (engagement) {
-                        vturbMetrics.engagement = engagement.engagement_rate || engagement.rate || 0;
-                        // Se engagement_rate está entre 0 e 1, converter para %
+                    if (engagement && engagement.engagement_rate > 0) {
+                        vturbMetrics.engagement = engagement.engagement_rate;
                         if (vturbMetrics.engagement > 0 && vturbMetrics.engagement <= 1) {
                             vturbMetrics.engagement = Math.round(vturbMetrics.engagement * 100);
                         }
-                        console.log(`[Sync] VTurb engajamento: ${vturbMetrics.engagement}%, tempo_medio=${engagement.average_watched_time || 0}s`);
+                    } else if (vturbMetrics.plays > 0 && vturbMetrics.viewed > 0) {
+                        // Fallback: calcular engajamento a partir dos eventos
+                        vturbMetrics.engagement = Math.round((vturbMetrics.viewed / vturbMetrics.plays) * 100);
+                        // Limitar a 100% max
+                        if (vturbMetrics.engagement > 100) vturbMetrics.engagement = 100;
                     }
+                    console.log(`[Sync] VTurb engajamento: ${vturbMetrics.engagement}%, tempo_medio=${engagement?.average_watched_time || 0}s`);
                 }
             } catch (error) {
                 console.error("[Sync] Erro ao buscar VTurb:", error);
@@ -100,8 +104,21 @@ export class SyncService {
             console.log("[Sync] VTurb: API key não configurada, pulando.");
         }
 
-        // 3. Salvar no banco de dados
-        console.log(`[Sync] Salvando: plays=${vturbMetrics.plays}, retLead=${vturbMetrics.retencaoLead}%, engaj=${vturbMetrics.engagement}%, retPitch=${vturbMetrics.retencaoPitch}%, gasto=${metaMetrics.spend}`);
+        // 3. Buscar dados existentes no banco (para preservar vendas de webhook)
+        const existingData = await prisma.dailyPerformance.findUnique({
+            where: { date: new Date(dateStr) }
+        });
+        const vendas = existingData?.vendas || 0;
+        const receitaGerada = existingData?.receitaGerada || 0;
+
+        // 4. Calcular Conversão VSL = (vendas / plays) * 100
+        let conversaoVSL = 0;
+        if (vturbMetrics.plays > 0 && vendas > 0) {
+            conversaoVSL = Math.round((vendas / vturbMetrics.plays) * 100 * 100) / 100; // 2 casas decimais
+        }
+
+        // 5. Salvar no banco de dados
+        console.log(`[Sync] Salvando: plays=${vturbMetrics.plays}, retLead=${vturbMetrics.retencaoLead}%, engaj=${vturbMetrics.engagement}%, retPitch=${vturbMetrics.retencaoPitch}%, convVSL=${conversaoVSL}%, gasto=${metaMetrics.spend}`);
 
         await prisma.dailyPerformance.upsert({
             where: { date: new Date(dateStr) },
@@ -112,6 +129,7 @@ export class SyncService {
                 retencaoLeadVSL: vturbMetrics.retencaoLead,
                 engajamentoVSL: vturbMetrics.engagement,
                 retencaoPitchVSL: vturbMetrics.retencaoPitch,
+                conversaoVSL: conversaoVSL,
             },
             create: {
                 date: new Date(dateStr),
@@ -121,6 +139,7 @@ export class SyncService {
                 retencaoLeadVSL: vturbMetrics.retencaoLead,
                 engajamentoVSL: vturbMetrics.engagement,
                 retencaoPitchVSL: vturbMetrics.retencaoPitch,
+                conversaoVSL: conversaoVSL,
             }
         });
 
