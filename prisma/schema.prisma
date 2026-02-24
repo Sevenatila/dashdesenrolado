@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("USER")
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Sale {
+  id             String   @id @default(cuid())
+  platform       String   // KIWIFY, HUBLA
+  externalId     String   @unique
+  amount         Float
+  status         String
+  customerEmail  String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmContent     String?
+  utmTerm        String?
+}
+
+model Metric {
+  id        String   @id @default(cuid())
+  platform  String   // VTURB, META, UTMIFY
+  type      String   // ROI, CTR, VIEW_RATE, CPA, TICKET_MEDIO, etc
+  value     Float
+  date      DateTime
+  createdAt DateTime @default(now())
+}
+
+model DailyPerformance {
+  id                String   @id @default(cuid())
+  date              DateTime @unique
+  cliquesLink       Int      @default(0)
+  visualizacaoPage  Int      @default(0)
+  playsUnicosVSL    Int      @default(0)
+  retencaoLeadVSL   Float    @default(0) // %
+  engajamentoVSL    Float    @default(0) // %
+  retencaoPitchVSL  Float    @default(0) // %
+  conversaocheckout Float    @default(0) // %
+  conversaoVSL      Float    @default(0) // %
+  vendas            Int      @default(0)
+  cpa               Float    @default(0)
+  valorGasto        Float    @default(0)
+  receitaGerada     Float    @default(0)
+  ticketMedio       Float    @default(0)
+  conversaoOrderBump Float    @default(0)
+  conversaoBackredirect Float  @default(0)
+  conversaoUpsell   Float    @default(0)
+  conversaoDownsell Float    @default(0)
+  conversaoUpsell2  Float    @default(0)
+  updatedAt         DateTime @updatedAt
+}
