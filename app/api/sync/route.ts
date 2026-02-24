@@ -12,16 +12,24 @@ export async function GET(req: Request) {
         }
 
         const { searchParams } = new URL(req.url);
-        const dateStr = searchParams.get("date") || new Date().toISOString().split('T')[0];
-
-        console.log(`Manual Sync requested for date: ${dateStr}`);
+        const start = searchParams.get("start");
+        const end = searchParams.get("end");
+        const date = searchParams.get("date");
 
         const syncService = new SyncService();
-        await syncService.syncDay(dateStr);
+
+        if (start && end) {
+            console.log(`Manual Range Sync requested: ${start} to ${end}`);
+            await syncService.syncRange(start, end);
+        } else {
+            const dateStr = date || start || new Date().toISOString().split('T')[0];
+            console.log(`Manual Day Sync requested for date: ${dateStr}`);
+            await syncService.syncDay(dateStr);
+        }
 
         return NextResponse.json({
             status: "success",
-            message: `Sincronização concluída para ${dateStr}`
+            message: `Sincronização concluída`
         });
     } catch (error) {
         console.error("Sync API Error:", error);

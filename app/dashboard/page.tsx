@@ -12,10 +12,48 @@ import {
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import SyncButton from "@/components/dashboard/SyncButton";
+import DateRangePicker from "@/components/dashboard/DateRangePicker";
 import prisma from "@/lib/prisma";
 
-async function getMetrics() {
+async function getMetrics(start?: string, end?: string) {
     try {
+        if (start && end) {
+            const metrics = await prisma.dailyPerformance.findMany({
+                where: {
+                    date: {
+                        gte: new Date(start),
+                        lte: new Date(end)
+                    }
+                }
+            });
+
+            if (metrics.length === 0) return null;
+
+            // Agrega os dados do período
+            return {
+                date: end,
+                receitaGerada: metrics.reduce((acc, m) => acc + m.receitaGerada, 0),
+                vendas: metrics.reduce((acc, m) => acc + m.vendas, 0),
+                valorGasto: metrics.reduce((acc, m) => acc + m.valorGasto, 0),
+                cliquesLink: metrics.reduce((acc, m) => acc + m.cliquesLink, 0),
+                playsUnicosVSL: metrics.reduce((acc, m) => acc + m.playsUnicosVSL, 0),
+                visualizacaoPage: metrics.reduce((acc, m) => acc + m.visualizacaoPage, 0),
+                // Médias ponderadas para outras métricas seriam ideais, mas aqui fazemos médias simples ou novos cálculos
+                cpa: metrics.reduce((acc, m) => acc + m.valorGasto, 0) / (metrics.reduce((acc, m) => acc + m.vendas, 0) || 1),
+                ticketMedio: metrics.reduce((acc, m) => acc + m.receitaGerada, 0) / (metrics.reduce((acc, m) => acc + m.vendas, 0) || 1),
+                conversaoVSL: Math.round(metrics.reduce((acc, m) => acc + m.conversaoVSL, 0) / metrics.length),
+                retencaoLeadVSL: Math.round(metrics.reduce((acc, m) => acc + m.retencaoLeadVSL, 0) / metrics.length),
+                engajamentoVSL: Math.round(metrics.reduce((acc, m) => acc + m.engajamentoVSL, 0) / metrics.length),
+                retencaoPitchVSL: Math.round(metrics.reduce((acc, m) => acc + m.retencaoPitchVSL, 0) / metrics.length),
+                conversaocheckout: Math.round(metrics.reduce((acc, m) => acc + m.conversaocheckout, 0) / metrics.length),
+                conversaoOrderBump: Math.round(metrics.reduce((acc, m) => acc + m.conversaoOrderBump, 0) / metrics.length),
+                conversaoBackredirect: Math.round(metrics.reduce((acc, m) => acc + m.conversaoBackredirect, 0) / metrics.length),
+                conversaoUpsell: Math.round(metrics.reduce((acc, m) => acc + m.conversaoUpsell, 0) / metrics.length),
+                conversaoDownsell: Math.round(metrics.reduce((acc, m) => acc + m.conversaoDownsell, 0) / metrics.length),
+                conversaoUpsell2: Math.round(metrics.reduce((acc, m) => acc + m.conversaoUpsell2, 0) / metrics.length),
+            };
+        }
+
         const latest = await prisma.dailyPerformance.findFirst({
             orderBy: { date: 'desc' }
         });
@@ -26,8 +64,13 @@ async function getMetrics() {
     }
 }
 
-export default async function DashboardPage() {
-    const metrics = await getMetrics();
+export default async function DashboardPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ start?: string; end?: string }>;
+}) {
+    const { start, end } = await searchParams;
+    const metrics = await getMetrics(start, end);
 
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -35,14 +78,17 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-8 pb-12">
             <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
                         <p className="text-sm text-gray-500">
-                            Última atualização: {metrics?.date ? new Date(metrics.date).toLocaleDateString('pt-BR') : 'Sem dados'}
+                            Período: {start ? `${new Date(start).toLocaleDateString('pt-BR')} até ${new Date(end!).toLocaleDateString('pt-BR')}` : 'Últimos dados disponíveis'}
                         </p>
                     </div>
-                    <SyncButton />
+                    <div className="flex flex-wrap items-center gap-4">
+                        <DateRangePicker />
+                        <SyncButton />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -51,7 +97,7 @@ export default async function DashboardPage() {
                         title="Receita Gerada"
                         value={formatCurrency(metrics?.receitaGerada || 0)}
                         icon={DollarSign}
-                        description="Kiwify + Hubla"
+                        description="UTMify"
                     />
                     <MetricCard
                         title="Vendas Totais"

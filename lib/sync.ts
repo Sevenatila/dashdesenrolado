@@ -9,18 +9,9 @@ export class SyncService {
         const nextDay = new Date(date);
         nextDay.setDate(date.getDate() + 1);
 
-        // 1. Buscar métricas de vendas do nosso banco (populado via webhooks)
-        const sales = await prisma.sale.findMany({
-            where: {
-                createdAt: {
-                    gte: new Date(date.setHours(0, 0, 0, 0)),
-                    lte: new Date(date.setHours(23, 59, 59, 999))
-                }
-            }
-        });
-
-        const totalRevenue = sales.filter(s => s.status === 'PAID').reduce((acc, s) => acc + s.amount, 0);
-        const totalSales = sales.filter(s => s.status === 'PAID').length;
+        // 1. Métricas de vendas (agora centralizadas na UTMify, removida busca local do banco)
+        const totalRevenue = 0;
+        const totalSales = 0;
 
         // 2. Buscar Meta Ads
         let metaMetrics = { spend: 0, clicks: 0, impressions: 0 };
@@ -29,18 +20,41 @@ export class SyncService {
             metaMetrics = await meta.getDailyMetrics(dateStr);
         }
 
-        // 3. Buscar UTMify (Conversões de Funil)
-        let utmifyData = null;
+        // 3. Buscar UTMify (Conversões de Funil e Vendas)
+        let utmifyMetrics = {
+            revenue: 0,
+            salesCount: 0,
+            checkoutConversions: 0,
+            upsell1: 0,
+            upsell2: 0,
+            downsell: 0,
+            backredirect: 0,
+            orderBump: 0
+        };
+
         if (process.env.UTMIFY_API_TOKEN) {
             const utmify = new UTMifyClient(process.env.UTMIFY_API_TOKEN);
-            utmifyData = await utmify.getOrders(dateStr, dateStr);
+            const utmifyData = await utmify.getOrders(dateStr, dateStr);
+
+            if (utmifyData && Array.isArray(utmifyData)) {
+                // Filtrar apenas ordens pagas/aprovadas da UTMify
+                const paidOrders = utmifyData.filter((o: any) =>
+                    o.status === 'approved' || o.status === 'paid' || o.status === 'complete'
+                );
+
+                utmifyMetrics.revenue = paidOrders.reduce((acc: number, o: any) => acc + (o.total_price || 0), 0);
+                utmifyMetrics.salesCount = paidOrders.length;
+
+                // Exemplo de como processar taxas de conversão se a UTMify fornecer os eventos
+                // utmifyMetrics.checkoutConversions = ...
+            }
         }
 
         // 4. Buscar VTurb (Métricas de VSL)
+        // ... (mantém o código de vturb)
         let vturbMetrics = { plays: 0, leadRetention: 0, engagement: 0, pitchRetention: 0 };
         if (process.env.VTURB_API_KEY) {
             const vturb = new VTurbClient(process.env.VTURB_API_KEY);
-            // O ID do vídeo deve vir de uma configuração, por enquanto usando o do quiz removido
             const videoId = "68fda7c738d7cd51cf68c89a";
             const stats = await vturb.getVideoMetrics(videoId);
             if (stats) {
@@ -53,16 +67,20 @@ export class SyncService {
             }
         }
 
+        // Usar dados da UTMify se as vendas locais (webhook) estiverem zeradas (útil para dados históricos)
+        const finalRevenue = totalRevenue > 0 ? totalRevenue : utmifyMetrics.revenue;
+        const finalSalesCount = totalSales > 0 ? totalSales : utmifyMetrics.salesCount;
+
         // 5. Atualizar DailyPerformance
         await prisma.dailyPerformance.upsert({
             where: { date: new Date(dateStr) },
             update: {
                 valorGasto: metaMetrics.spend,
                 cliquesLink: metaMetrics.clicks,
-                vendas: totalSales,
-                receitaGerada: totalRevenue,
-                cpa: totalSales > 0 ? metaMetrics.spend / totalSales : 0,
-                ticketMedio: totalSales > 0 ? totalRevenue / totalSales : 0,
+                vendas: finalSalesCount,
+                receitaGerada: finalRevenue,
+                cpa: finalSalesCount > 0 ? metaMetrics.spend / finalSalesCount : 0,
+                ticketMedio: finalSalesCount > 0 ? finalRevenue / finalSalesCount : 0,
                 playsUnicosVSL: vturbMetrics.plays,
                 retencaoLeadVSL: vturbMetrics.leadRetention,
                 engajamentoVSL: vturbMetrics.engagement,
@@ -72,10 +90,10 @@ export class SyncService {
                 date: new Date(dateStr),
                 valorGasto: metaMetrics.spend,
                 cliquesLink: metaMetrics.clicks,
-                vendas: totalSales,
-                receitaGerada: totalRevenue,
-                cpa: totalSales > 0 ? metaMetrics.spend / totalSales : 0,
-                ticketMedio: totalSales > 0 ? totalRevenue / totalSales : 0,
+                vendas: finalSalesCount,
+                receitaGerada: finalRevenue,
+                cpa: finalSalesCount > 0 ? metaMetrics.spend / finalSalesCount : 0,
+                ticketMedio: finalSalesCount > 0 ? finalRevenue / finalSalesCount : 0,
                 playsUnicosVSL: vturbMetrics.plays,
                 retencaoLeadVSL: vturbMetrics.leadRetention,
                 engajamentoVSL: vturbMetrics.engagement,
@@ -84,5 +102,19 @@ export class SyncService {
         });
 
         console.log(`Sync completo para ${dateStr}`);
+    }
+
+    async syncRange(startStr: string, endStr: string) {
+        const start = new Date(startStr);
+        const end = new Date(endStr);
+
+        // Loop por cada dia no intervalo
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const currentDayStr = d.toISOString().split('T')[0];
+            console.log(`Iniciando sync para ${currentDayStr}...`);
+            await this.syncDay(currentDayStr);
+        }
+
+        console.log(`Sync de intervalo completo de ${startStr} até ${endStr}`);
     }
 }

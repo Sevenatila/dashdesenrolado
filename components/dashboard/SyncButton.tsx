@@ -2,18 +2,27 @@
 
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SyncButton() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const handleSync = async () => {
-        if (!confirm("Deseja sincronizar as métricas de hoje com Meta Ads e UTMify?")) return;
+        const start = searchParams.get("start");
+        const end = searchParams.get("end");
+
+        const confirmMsg = start && end
+            ? `Deseja sincronizar as métricas de ${start} até ${end}?`
+            : "Deseja sincronizar as métricas de hoje?";
+
+        if (!confirm(confirmMsg)) return;
 
         setLoading(true);
         try {
-            const res = await fetch("/api/sync");
+            const query = start && end ? `?start=${start}&end=${end}` : "";
+            const res = await fetch(`/api/sync${query}`);
             const data = await res.json();
 
             if (res.ok) {
@@ -35,8 +44,8 @@ export default function SyncButton() {
             onClick={handleSync}
             disabled={loading}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all shadow-sm ${loading
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
                 }`}
         >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
