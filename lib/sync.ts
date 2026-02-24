@@ -20,45 +20,78 @@ export class SyncService {
             console.log("[Sync] Meta Ads: tokens não configurados, pulando.");
         }
 
-        // 2. Buscar VTurb (Plays, Engajamento)
-        let vturbMetrics = { plays: 0, engagement: 0 };
+        // 2. Buscar VTurb (Plays, Retenção Lead, Engajamento, Retenção Pitch)
+        let vturbMetrics = {
+            plays: 0,
+            viewed: 0,
+            finished: 0,
+            retencaoLead: 0,
+            engagement: 0,
+            retencaoPitch: 0,
+        };
+
         if (process.env.VTURB_API_KEY) {
             try {
                 const vturb = new VTurbClient(process.env.VTURB_API_KEY);
                 let targetPlayerId = playerId;
                 let videoDuration = 600;
 
-                if (!targetPlayerId) {
-                    // Se não especificou player, usa o primeiro
-                    const players = await vturb.listPlayers();
-                    if (players && players.length > 0) {
+                // Buscar lista de players para pegar a duração real do vídeo
+                const players = await vturb.listPlayers();
+                if (players && players.length > 0) {
+                    if (!targetPlayerId) {
+                        // Se não especificou player, usa o primeiro
                         targetPlayerId = players[0].id || players[0]._id;
                         videoDuration = players[0].video_duration || players[0].duration || 600;
-                        console.log(`[Sync] VTurb: Usando primeiro player "${players[0].name}" (${targetPlayerId})`);
+                        console.log(`[Sync] VTurb: Usando primeiro player "${players[0].name}" (${targetPlayerId}), duração=${videoDuration}s`);
+                    } else {
+                        // Buscar a duração real do player selecionado
+                        const selectedPlayer = players.find((p: any) => (p.id || p._id) === targetPlayerId);
+                        if (selectedPlayer) {
+                            videoDuration = selectedPlayer.video_duration || selectedPlayer.duration || 600;
+                            console.log(`[Sync] VTurb: Player "${selectedPlayer.name}" (${targetPlayerId}), duração=${videoDuration}s`);
+                        } else {
+                            console.log(`[Sync] VTurb: Player selecionado (${targetPlayerId}), duração padrão=${videoDuration}s`);
+                        }
                     }
-                } else {
-                    console.log(`[Sync] VTurb: Usando player selecionado (${targetPlayerId})`);
                 }
 
                 if (targetPlayerId) {
-                    // Buscar eventos (plays, views)
+                    // ===== EVENTOS (plays, viewed, finished) =====
                     const events = await vturb.getEventsByDay(targetPlayerId, dateStr, dateStr);
                     if (events && Array.isArray(events) && events.length > 0) {
-                        // Formato real da VTurb: {"event":"started","total":35,"total_uniq_sessions":35,"total_uniq_device":35}
+                        // Formato: {"event":"started","total":35,"total_uniq_sessions":35,"total_uniq_device":35}
                         const startedEvent = events.find((e: any) => e.event === 'started');
-                        if (startedEvent) {
-                            vturbMetrics.plays = startedEvent.total_uniq_device || startedEvent.total || 0;
+                        const viewedEvent = events.find((e: any) => e.event === 'viewed');
+                        const finishedEvent = events.find((e: any) => e.event === 'finished');
+
+                        vturbMetrics.plays = startedEvent?.total_uniq_device || startedEvent?.total || 0;
+                        vturbMetrics.viewed = viewedEvent?.total_uniq_device || viewedEvent?.total || 0;
+                        vturbMetrics.finished = finishedEvent?.total_uniq_device || finishedEvent?.total || 0;
+
+                        // Calcular retenções
+                        if (vturbMetrics.plays > 0) {
+                            // Retenção Lead = % que assistiu (viewed / started)
+                            vturbMetrics.retencaoLead = Math.round((vturbMetrics.viewed / vturbMetrics.plays) * 100);
+
+                            // Retenção Pitch = % que terminou (finished / started)
+                            vturbMetrics.retencaoPitch = Math.round((vturbMetrics.finished / vturbMetrics.plays) * 100);
                         }
-                        console.log(`[Sync] VTurb parsed: started=${JSON.stringify(startedEvent)}`);
+
+                        console.log(`[Sync] VTurb eventos: plays=${vturbMetrics.plays}, viewed=${vturbMetrics.viewed}, finished=${vturbMetrics.finished}`);
+                        console.log(`[Sync] VTurb retenção: lead=${vturbMetrics.retencaoLead}%, pitch=${vturbMetrics.retencaoPitch}%`);
                     }
 
-                    // Buscar engajamento
+                    // ===== ENGAJAMENTO =====
                     const engagement = await vturb.getEngagement(targetPlayerId, videoDuration, dateStr, dateStr);
                     if (engagement) {
                         vturbMetrics.engagement = engagement.engagement_rate || engagement.rate || 0;
+                        // Se engagement_rate está entre 0 e 1, converter para %
+                        if (vturbMetrics.engagement > 0 && vturbMetrics.engagement <= 1) {
+                            vturbMetrics.engagement = Math.round(vturbMetrics.engagement * 100);
+                        }
+                        console.log(`[Sync] VTurb engajamento: ${vturbMetrics.engagement}%, tempo_medio=${engagement.average_watched_time || 0}s`);
                     }
-
-                    console.log(`[Sync] VTurb: plays=${vturbMetrics.plays}, engajamento=${vturbMetrics.engagement}%`);
                 }
             } catch (error) {
                 console.error("[Sync] Erro ao buscar VTurb:", error);
@@ -68,7 +101,7 @@ export class SyncService {
         }
 
         // 3. Salvar no banco de dados
-        console.log(`[Sync] Salvando no banco: cliques=${metaMetrics.clicks}, plays=${vturbMetrics.plays}, gasto=${metaMetrics.spend}`);
+        console.log(`[Sync] Salvando: plays=${vturbMetrics.plays}, retLead=${vturbMetrics.retencaoLead}%, engaj=${vturbMetrics.engagement}%, retPitch=${vturbMetrics.retencaoPitch}%, gasto=${metaMetrics.spend}`);
 
         await prisma.dailyPerformance.upsert({
             where: { date: new Date(dateStr) },
@@ -76,14 +109,18 @@ export class SyncService {
                 valorGasto: metaMetrics.spend,
                 cliquesLink: metaMetrics.clicks,
                 playsUnicosVSL: vturbMetrics.plays,
+                retencaoLeadVSL: vturbMetrics.retencaoLead,
                 engajamentoVSL: vturbMetrics.engagement,
+                retencaoPitchVSL: vturbMetrics.retencaoPitch,
             },
             create: {
                 date: new Date(dateStr),
                 valorGasto: metaMetrics.spend,
                 cliquesLink: metaMetrics.clicks,
                 playsUnicosVSL: vturbMetrics.plays,
+                retencaoLeadVSL: vturbMetrics.retencaoLead,
                 engajamentoVSL: vturbMetrics.engagement,
+                retencaoPitchVSL: vturbMetrics.retencaoPitch,
             }
         });
 
