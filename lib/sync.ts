@@ -72,6 +72,9 @@ export class SyncService {
         const finalSalesCount = totalSales > 0 ? totalSales : utmifyMetrics.salesCount;
 
         // 5. Atualizar DailyPerformance
+        console.log(`[Sync] Preparando upsert para ${dateStr}...`);
+        console.log(`[Sync] Vendas: ${finalSalesCount}, Receita: ${finalRevenue}, Gasto: ${metaMetrics.spend}`);
+
         await prisma.dailyPerformance.upsert({
             where: { date: new Date(dateStr) },
             update: {
@@ -101,7 +104,7 @@ export class SyncService {
             }
         });
 
-        console.log(`Sync completo para ${dateStr}`);
+        console.log(`[Sync] Sucesso: Registro para ${dateStr} atualizado.`);
     }
 
     async syncRange(startStr: string, endStr: string) {
