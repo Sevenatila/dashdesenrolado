@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma db push --skip-generate)",
+      "Bash(echo $DATABASE_URL)",
+      "Bash(npx prisma migrate status)",
+      "Bash(npx vercel --prod)",
+      "Bash(npx vercel --prod --yes)",
+      "Bash(npx vercel --name dashdesenrolado --prod --yes)",
+      "Bash(npx vercel env pull .env.production)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma db push)",
+      "Bash(curl -X GET \"http://localhost:3001/api/hubla/metrics\" --max-time 10)",
+      "Bash(npx vercel domains add dashdesenrolado.vercel.app)",
+      "Bash(curl -X GET \"https://dashdesenrolado-4ryomjhiy-atila-gomes-pazs-projects.vercel.app/api/hubla/metrics\" --max-time 10)",
+      "Bash(npm run dev)",
+      "Bash(curl -X GET \"http://localhost:3000/api/kiwify/webhook\" -H \"Content-Type: application/json\")",
+      "Bash(curl -X POST \"http://localhost:3002/api/kiwify/webhook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer rw40jlb46x8\" -d '{\"\"id\"\":\"\"test123\"\",\"\"event\"\":\"\"sale.created\"\",\"\"data\"\":{\"\"sale_id\"\":\"\"SALE001\"\",\"\"product_name\"\":\"\"Produto Teste\"\",\"\"customer_email\"\":\"\"cliente@teste.com\"\",\"\"customer_name\"\":\"\"Cliente Teste\"\",\"\"amount\"\":97.00,\"\"status\"\":\"\"approved\"\",\"\"payment_method\"\":\"\"credit_card\"\"}}')",
+      "Bash(git add -A)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

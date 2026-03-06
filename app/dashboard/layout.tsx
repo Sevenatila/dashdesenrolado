@@ -7,7 +7,8 @@ import {
     TrendingUp,
     Settings,
     LogOut,
-    Video
+    Video,
+    BarChart3
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -17,6 +18,7 @@ export default function DashboardLayout({
 }) {
     const menuItems = [
         { name: "Geral", icon: LayoutDashboard, href: "/dashboard" },
+        { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
         { name: "Meta Ads", icon: TrendingUp, href: "/dashboard/meta" },
         { name: "VTurb", icon: Video, href: "/dashboard/vturb" },
         { name: "Configurações", icon: Settings, href: "/dashboard/settings" },
