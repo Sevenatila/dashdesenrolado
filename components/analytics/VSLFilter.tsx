@@ -28,11 +28,11 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
                 const data = await response.json();
                 console.log('VSL Data received:', data); // Debug para ver os dados
 
-                const options: VSLOption[] = data.players?.map((player: any) => ({
+                const options: VSLOption[] = data?.players && Array.isArray(data.players) ? data.players.map((player: any) => ({
                     id: player.id || player._id,
                     name: player.name || player.title || `VSL ${player.id}`,
                     platform: 'VTurb'
-                })) || [];
+                })) : [];
 
                 // Se não houver VSLs, adicionar alguns exemplos
                 if (options.length === 0) {
