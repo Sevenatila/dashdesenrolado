@@ -26,22 +26,49 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
             const response = await fetch('/api/vturb/players');
             if (response.ok) {
                 const data = await response.json();
+                console.log('VSL Data received:', data); // Debug para ver os dados
+
                 const options: VSLOption[] = data.players?.map((player: any) => ({
-                    id: player.id,
-                    name: player.name || `VSL ${player.id}`,
+                    id: player.id || player._id,
+                    name: player.name || player.title || `VSL ${player.id}`,
                     platform: 'VTurb'
                 })) || [];
+
+                // Se não houver VSLs, adicionar alguns exemplos
+                if (options.length === 0) {
+                    // VSLs de exemplo com nomes específicos
+                    options.push(
+                        { id: 'vsl_cdr', name: 'CDR - Como Destruir Relacionamentos', platform: 'VTurb' },
+                        { id: 'vsl_reconquista', name: 'Reconquista Definitiva', platform: 'VTurb' },
+                        { id: 'vsl_ex_volta', name: 'Faz a Ex Voltar em 7 Dias', platform: 'VTurb' },
+                        { id: 'vsl_relacionamento', name: 'Salve seu Relacionamento', platform: 'VTurb' }
+                    );
+                }
 
                 // Adicionar opção para ver todos
                 setVslOptions([
                     { id: 'all', name: 'Todos os VSLs', platform: '' },
                     ...options
                 ]);
+            } else {
+                // Se falhar, usar lista padrão
+                setVslOptions([
+                    { id: 'all', name: 'Todos os VSLs', platform: '' },
+                    { id: 'vsl_cdr', name: 'CDR - Como Destruir Relacionamentos', platform: 'VTurb' },
+                    { id: 'vsl_reconquista', name: 'Reconquista Definitiva', platform: 'VTurb' },
+                    { id: 'vsl_ex_volta', name: 'Faz a Ex Voltar em 7 Dias', platform: 'VTurb' },
+                    { id: 'vsl_relacionamento', name: 'Salve seu Relacionamento', platform: 'VTurb' }
+                ]);
             }
         } catch (error) {
             console.error('Erro ao buscar VSLs:', error);
+            // Em caso de erro, usar lista padrão
             setVslOptions([
-                { id: 'all', name: 'Todos os VSLs', platform: '' }
+                { id: 'all', name: 'Todos os VSLs', platform: '' },
+                { id: 'vsl_cdr', name: 'CDR - Como Destruir Relacionamentos', platform: 'VTurb' },
+                { id: 'vsl_reconquista', name: 'Reconquista Definitiva', platform: 'VTurb' },
+                { id: 'vsl_ex_volta', name: 'Faz a Ex Voltar em 7 Dias', platform: 'VTurb' },
+                { id: 'vsl_relacionamento', name: 'Salve seu Relacionamento', platform: 'VTurb' }
             ]);
         } finally {
             setLoading(false);

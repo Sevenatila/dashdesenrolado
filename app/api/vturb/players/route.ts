@@ -21,14 +21,18 @@ export async function GET() {
             return NextResponse.json({ error: "Erro ao buscar players" }, { status: 500 });
         }
 
-        // Retorna lista simplificada: id, name, duration
-        const simplified = players.map((p: any) => ({
-            id: p.id || p._id,
-            name: p.name || "Sem nome",
-            duration: p.video_duration || p.duration || 0,
-        }));
+        // Retorna lista completa dos players com informações detalhadas
+        const playersData = {
+            players: players.map((p: any) => ({
+                id: p.id || p._id,
+                name: p.name || p.title || `VSL ${p.id || p._id}`,
+                duration: p.video_duration || p.duration || 0,
+                created_at: p.created_at,
+                status: p.status || 'active'
+            }))
+        };
 
-        return NextResponse.json(simplified);
+        return NextResponse.json(playersData);
     } catch (error) {
         console.error("VTurb Players API Error:", error);
         return NextResponse.json({ error: "Erro interno" }, { status: 500 });

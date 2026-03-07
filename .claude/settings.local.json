@@ -21,7 +21,8 @@
       "Bash(git push origin main)",
       "Bash(npx vercel logs dashdesenrolado-lt5j59t01-atila-gomes-pazs-projects.vercel.app)",
       "Bash(npm run build)",
-      "Bash(git commit -m \"fix: resolve build errors in Kiwify integration\")"
+      "Bash(git commit -m \"fix: resolve build errors in Kiwify integration\")",
+      "Bash(git commit -m \"feat: add VSL and Platform filters to Analytics dashboard\n\n- Added VSL filter to filter metrics by video sales letter\n- Added Platform filter for sales platforms (Hubla, Kiwify, etc)\n- Filters work independently or combined\n- Auto-recalculate summary metrics when filtering\n- Visual indicators for selected filters with colored badges\")"
     ],
     "deny": [],
     "ask": []
