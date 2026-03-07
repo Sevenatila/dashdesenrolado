@@ -1,5 +1,8 @@
 export interface DailyAnalytics {
     date: Date;
+    vslId?: string; // ID do vídeo de vendas
+    vslName?: string; // Nome do vídeo de vendas
+    platform?: string; // Plataforma de vendas (Hubla, Kiwify, etc)
 
     // Métricas de Tráfego
     valorGasto: number;
@@ -76,4 +79,18 @@ export interface AnalyticsFilters {
     campaign?: string;
     source?: string;
     product?: string;
+    vslId?: string;
+    platform?: string;
+}
+
+export interface PlatformOption {
+    id: string;
+    name: string;
+    color?: string;
+}
+
+export interface VSLOption {
+    id: string;
+    name: string;
+    platform?: string; // VTurb, etc
 }

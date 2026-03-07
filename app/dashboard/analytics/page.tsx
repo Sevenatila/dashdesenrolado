@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import MetricsTable from "@/components/analytics/MetricsTable";
+import VSLFilter from "@/components/analytics/VSLFilter";
+import PlatformFilter from "@/components/analytics/PlatformFilter";
 import { DailyAnalytics, MetricsSummary } from "@/types/analytics";
 import {
     TrendingUp,
@@ -19,100 +21,92 @@ import {
 
 export default function AnalyticsPage() {
     const [data, setData] = useState<DailyAnalytics[]>([]);
+    const [filteredData, setFilteredData] = useState<DailyAnalytics[]>([]);
     const [summary, setSummary] = useState<MetricsSummary | null>(null);
+    const [selectedVSL, setSelectedVSL] = useState<string | null>(null);
+    const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState({
         start: new Date(new Date().setDate(new Date().getDate() - 30)),
         end: new Date()
     });
 
-    // Mock data para demonstração - será substituído por dados reais
+    // Inicializar com dados vazios
     useEffect(() => {
-        const mockData: DailyAnalytics[] = [
-            {
-                date: new Date("2024-03-06"),
-                valorGasto: 1250.00,
-                cliques: 450,
-                cpc: 2.78,
-                visitas: 380,
-                cpv: 3.29,
-                connectRate: 84.44,
-                passagem: 65.00,
-                visuUnicaVSL: 247,
-                cpvv: 5.06,
-                iniciouCheckout: 45,
-                convCheckout: 18.22,
-                vendas: 8,
-                aov: 297.00,
-                cpa: 156.25,
-                vendasOB1: 3,
-                convOB1: 37.50,
-                vendasOB2: 1,
-                convOB2: 12.50,
-                upsell1: 2,
-                convUpsell1: 25.00,
-                upsell2: 1,
-                convUpsell2: 12.50,
-                downsell: 0,
-                observacoes: "Campanha com bom desempenho"
-            },
-            {
-                date: new Date("2024-03-05"),
-                valorGasto: 980.00,
-                cliques: 320,
-                cpc: 3.06,
-                visitas: 280,
-                cpv: 3.50,
-                connectRate: 87.50,
-                passagem: 62.00,
-                visuUnicaVSL: 174,
-                cpvv: 5.63,
-                iniciouCheckout: 32,
-                convCheckout: 18.39,
-                vendas: 6,
-                aov: 297.00,
-                cpa: 163.33,
-                vendasOB1: 2,
-                convOB1: 33.33,
-                vendasOB2: 0,
-                convOB2: 0,
-                upsell1: 1,
-                convUpsell1: 16.67,
-                upsell2: 0,
-                convUpsell2: 0,
-                downsell: 1
-            }
-        ];
+        const emptyData: DailyAnalytics[] = [];
 
-        setData(mockData);
+        setData(emptyData);
+        setFilteredData(emptyData);
 
-        // Calcular sumário
-        const totals = mockData.reduce(
-            (acc, day) => ({
-                totalGasto: acc.totalGasto + day.valorGasto,
-                totalCliques: acc.totalCliques + day.cliques,
-                totalVisitas: acc.totalVisitas + day.visitas,
-                totalVendas: acc.totalVendas + day.vendas,
-                totalReceita: acc.totalReceita + (day.vendas * day.aov)
-            }),
-            { totalGasto: 0, totalCliques: 0, totalVisitas: 0, totalVendas: 0, totalReceita: 0 }
-        );
-
+        // Inicializar sumário vazio
         setSummary({
-            ...totals,
-            cpcMedio: totals.totalGasto / totals.totalCliques,
-            cpvMedio: totals.totalGasto / totals.totalVisitas,
-            cpaMedio: totals.totalGasto / totals.totalVendas,
-            aovMedio: totals.totalReceita / totals.totalVendas,
-            taxaConversaoGeral: (totals.totalVendas / totals.totalVisitas) * 100,
-            taxaCheckout: 18.3,
-            taxaOB1: 35.4,
-            taxaOB2: 6.25,
-            taxaUpsell1: 20.8,
-            taxaUpsell2: 6.25,
-            roi: ((totals.totalReceita - totals.totalGasto) / totals.totalGasto) * 100,
-            roas: totals.totalReceita / totals.totalGasto
+            totalGasto: 0,
+            totalCliques: 0,
+            totalVisitas: 0,
+            totalVendas: 0,
+            totalReceita: 0,
+            cpcMedio: 0,
+            cpvMedio: 0,
+            cpaMedio: 0,
+            aovMedio: 0,
+            taxaConversaoGeral: 0,
+            taxaCheckout: 0,
+            taxaOB1: 0,
+            taxaOB2: 0,
+            taxaUpsell1: 0,
+            taxaUpsell2: 0,
+            roi: 0,
+            roas: 0
         });
     }, []);
+
+    // Filtrar dados quando VSL ou Plataforma mudarem
+    useEffect(() => {
+        let filtered = [...data];
+
+        // Filtrar por VSL
+        if (selectedVSL) {
+            filtered = filtered.filter(item => item.vslId === selectedVSL);
+        }
+
+        // Filtrar por Plataforma
+        if (selectedPlatform) {
+            filtered = filtered.filter(item =>
+                item.platform?.toLowerCase() === selectedPlatform.toLowerCase()
+            );
+        }
+
+        setFilteredData(filtered);
+
+        // Recalcular sumário com dados filtrados
+        if (filtered.length > 0) {
+            const totals = filteredData.reduce(
+                (acc, day) => ({
+                    totalGasto: acc.totalGasto + day.valorGasto,
+                    totalCliques: acc.totalCliques + day.cliques,
+                    totalVisitas: acc.totalVisitas + day.visitas,
+                    totalVendas: acc.totalVendas + day.vendas,
+                    totalReceita: acc.totalReceita + (day.vendas * day.aov)
+                }),
+                { totalGasto: 0, totalCliques: 0, totalVisitas: 0, totalVendas: 0, totalReceita: 0 }
+            );
+
+            setSummary({
+                ...totals,
+                cpcMedio: totals.totalCliques > 0 ? totals.totalGasto / totals.totalCliques : 0,
+                cpvMedio: totals.totalVisitas > 0 ? totals.totalGasto / totals.totalVisitas : 0,
+                cpaMedio: totals.totalVendas > 0 ? totals.totalGasto / totals.totalVendas : 0,
+                aovMedio: totals.totalVendas > 0 ? totals.totalReceita / totals.totalVendas : 0,
+                taxaConversaoGeral: totals.totalVisitas > 0 ? (totals.totalVendas / totals.totalVisitas) * 100 : 0,
+                taxaCheckout: 0,
+                taxaOB1: 0,
+                taxaOB2: 0,
+                taxaUpsell1: 0,
+                taxaUpsell2: 0,
+                roi: totals.totalGasto > 0 ? ((totals.totalReceita - totals.totalGasto) / totals.totalGasto) * 100 : 0,
+                roas: totals.totalGasto > 0 ? totals.totalReceita / totals.totalGasto : 0
+            });
+        }
+    }, [selectedVSL, selectedPlatform, data]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("pt-BR", {
@@ -135,9 +129,17 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="flex gap-3">
+                    <VSLFilter
+                        selectedVSL={selectedVSL}
+                        onVSLChange={setSelectedVSL}
+                    />
+                    <PlatformFilter
+                        selectedPlatform={selectedPlatform}
+                        onPlatformChange={setSelectedPlatform}
+                    />
                     <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
                         <Filter className="w-4 h-4" />
-                        Filtros
+                        Mais Filtros
                     </button>
                     <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
                         <Upload className="w-4 h-4" />
@@ -159,8 +161,8 @@ export default function AnalyticsPage() {
                             <h3 className="text-sm font-medium opacity-90">ROI</h3>
                             <TrendingUp className="w-5 h-5 opacity-80" />
                         </div>
-                        <p className="text-3xl font-bold">{formatPercent(summary.roi)}</p>
-                        <p className="text-sm opacity-80 mt-2">ROAS: {summary.roas.toFixed(2)}x</p>
+                        <p className="text-3xl font-bold">{summary.roi ? formatPercent(summary.roi) : '0%'}</p>
+                        <p className="text-sm opacity-80 mt-2">ROAS: {summary.roas ? summary.roas.toFixed(2) : '0.00'}x</p>
                     </div>
 
                     {/* Card Receita */}
@@ -237,8 +239,27 @@ export default function AnalyticsPage() {
 
             {/* Tabela de Métricas */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Detalhamento Diário</h2>
-                <MetricsTable data={data} />
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Detalhamento Diário
+                    {(selectedVSL || selectedPlatform) && filteredData.length > 0 && (
+                        <span className="text-sm font-normal text-gray-600 ml-2">
+                            ({filteredData.length} registros filtrados)
+                        </span>
+                    )}
+                </h2>
+                {filteredData.length > 0 ? (
+                    <MetricsTable data={filteredData} />
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
+                        <div className="text-center">
+                            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum dado disponível</h3>
+                            <p className="text-gray-600">
+                                Importe seus dados ou aguarde a sincronização das métricas para visualizar o dashboard.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
