@@ -45,27 +45,16 @@ export default function AnalyticsPage() {
             const response = await fetch(`/api/analytics/metrics?${params}`);
             if (response.ok) {
                 const result = await response.json();
-                setData(result.data || []);
-                setFilteredData(result.data || []);
+                const metricsData = result.data || [];
+                setData(metricsData);
+                setFilteredData(metricsData);
 
                 // Calcular sumário inicial
-                if (result.data && result.data.length > 0) {
-                    calculateSummary(result.data);
-                }
-            } else {
-                console.error('Erro ao buscar métricas');
-                setData([]);
-                setFilteredData([]);
-            }
-        } catch (error) {
-            console.error('Erro ao buscar métricas:', error);
-            setData([]);
-            setFilteredData([]);
-        }
-
-        // Se não houver dados, inicializar vazio
-        if (data.length === 0) {
-            setSummary({
+                if (metricsData.length > 0) {
+                    calculateSummary(metricsData);
+                } else {
+                    // Inicializar sumário vazio
+                    setSummary({
             totalGasto: 0,
             totalCliques: 0,
             totalVisitas: 0,
@@ -81,9 +70,57 @@ export default function AnalyticsPage() {
             taxaOB2: 0,
             taxaUpsell1: 0,
             taxaUpsell2: 0,
-            roi: 0,
-            roas: 0
-        });
+                        roi: 0,
+                        roas: 0
+                    });
+                }
+            } else {
+                console.error('Erro ao buscar métricas');
+                setData([]);
+                setFilteredData([]);
+                setSummary({
+                    totalGasto: 0,
+                    totalCliques: 0,
+                    totalVisitas: 0,
+                    totalVendas: 0,
+                    totalReceita: 0,
+                    cpcMedio: 0,
+                    cpvMedio: 0,
+                    cpaMedio: 0,
+                    aovMedio: 0,
+                    taxaConversaoGeral: 0,
+                    taxaCheckout: 0,
+                    taxaOB1: 0,
+                    taxaOB2: 0,
+                    taxaUpsell1: 0,
+                    taxaUpsell2: 0,
+                    roi: 0,
+                    roas: 0
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao buscar métricas:', error);
+            setData([]);
+            setFilteredData([]);
+            setSummary({
+                totalGasto: 0,
+                totalCliques: 0,
+                totalVisitas: 0,
+                totalVendas: 0,
+                totalReceita: 0,
+                cpcMedio: 0,
+                cpvMedio: 0,
+                cpaMedio: 0,
+                aovMedio: 0,
+                taxaConversaoGeral: 0,
+                taxaCheckout: 0,
+                taxaOB1: 0,
+                taxaOB2: 0,
+                taxaUpsell1: 0,
+                taxaUpsell2: 0,
+                roi: 0,
+                roas: 0
+            });
         }
     };
 
@@ -199,11 +236,13 @@ export default function AnalyticsPage() {
 
     // Atualizar dados quando filtros mudarem
     useEffect(() => {
-        const timer = setTimeout(() => {
-            handleFilterChange();
-        }, 500);
+        if (selectedVSL !== null || selectedPlatform !== null) {
+            const timer = setTimeout(() => {
+                handleFilterChange();
+            }, 500);
 
-        return () => clearTimeout(timer);
+            return () => clearTimeout(timer);
+        }
     }, [selectedVSL, selectedPlatform]);
 
     const formatCurrency = (value: number) => {

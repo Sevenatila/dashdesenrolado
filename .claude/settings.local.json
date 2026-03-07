@@ -23,7 +23,10 @@
       "Bash(npm run build)",
       "Bash(git commit -m \"fix: resolve build errors in Kiwify integration\")",
       "Bash(git commit -m \"feat: add VSL and Platform filters to Analytics dashboard\n\n- Added VSL filter to filter metrics by video sales letter\n- Added Platform filter for sales platforms (Hubla, Kiwify, etc)\n- Filters work independently or combined\n- Auto-recalculate summary metrics when filtering\n- Visual indicators for selected filters with colored badges\")",
-      "Bash(git commit -m \"feat: update VSL filter with specific video names\n\n- Added specific VSL names instead of generic ''All Videos''\n- Improved API endpoint to return detailed player information\n- Added fallback list with real VSL names (CDR, Reconquista, etc)\n- Filter now shows individual VSLs for precise analytics\")"
+      "Bash(git commit -m \"feat: update VSL filter with specific video names\n\n- Added specific VSL names instead of generic ''All Videos''\n- Improved API endpoint to return detailed player information\n- Added fallback list with real VSL names (CDR, Reconquista, etc)\n- Filter now shows individual VSLs for precise analytics\")",
+      "Bash(git commit -m \"feat: integrate real metrics data in Analytics dashboard\n\n- Created API endpoint to fetch real metrics from VTurb and database\n- Connected VSL filter to fetch specific video metrics\n- Integrated sales data from Hubla and Kiwify\n- Auto-calculate ROI, ROAS, and conversion rates with real data\n- Dashboard now shows actual plays, sales, and engagement metrics\")",
+      "Bash(npx vercel logs dashdesenrolado-j8s0y3yxg-atila-gomes-pazs-projects.vercel.app)",
+      "Bash(git commit -m \"fix: resolve client-side error in Analytics dashboard\n\n- Fixed useEffect dependency issues\n- Improved error handling in fetchMetrics\n- Ensured proper state initialization\n- Added null checks for filters\")"
     ],
     "deny": [],
     "ask": []
