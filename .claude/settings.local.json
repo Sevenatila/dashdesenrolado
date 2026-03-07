@@ -16,7 +16,12 @@
       "Bash(npm run dev)",
       "Bash(curl -X GET \"http://localhost:3000/api/kiwify/webhook\" -H \"Content-Type: application/json\")",
       "Bash(curl -X POST \"http://localhost:3002/api/kiwify/webhook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer rw40jlb46x8\" -d '{\"\"id\"\":\"\"test123\"\",\"\"event\"\":\"\"sale.created\"\",\"\"data\"\":{\"\"sale_id\"\":\"\"SALE001\"\",\"\"product_name\"\":\"\"Produto Teste\"\",\"\"customer_email\"\":\"\"cliente@teste.com\"\",\"\"customer_name\"\":\"\"Cliente Teste\"\",\"\"amount\"\":97.00,\"\"status\"\":\"\"approved\"\",\"\"payment_method\"\":\"\"credit_card\"\"}}')",
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit -m \"feat: add Kiwify integration and Analytics dashboard\n\n- Added Kiwify webhook integration with token authentication\n- Created comprehensive Analytics dashboard with all funnel metrics\n- Added metrics table with expandable rows for detailed view\n- Implemented summary cards showing ROI, ROAS, and conversion rates\n- Added Analytics route to sidebar menu\")",
+      "Bash(git push origin main)",
+      "Bash(npx vercel logs dashdesenrolado-lt5j59t01-atila-gomes-pazs-projects.vercel.app)",
+      "Bash(npm run build)",
+      "Bash(git commit -m \"fix: resolve build errors in Kiwify integration\")"
     ],
     "deny": [],
     "ask": []

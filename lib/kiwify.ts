@@ -56,15 +56,9 @@ export class KiwifyService {
             data: {
                 platform: 'KIWIFY',
                 externalId: data.sale_id || event.id,
-                productName: data.product_name || 'Produto Kiwify',
                 customerEmail: data.customer_email || '',
-                customerName: data.customer_name || '',
                 amount: data.amount || 0,
                 status: data.status || 'approved',
-                paymentMethod: data.payment_method || 'unknown',
-                affiliateId: data.affiliate_id,
-                affiliateName: data.affiliate_name,
-                commission: data.commission || 0,
                 utmSource: data.utm_source,
                 utmMedium: data.utm_medium,
                 utmCampaign: data.utm_campaign,
@@ -117,11 +111,6 @@ export class KiwifyService {
                 platform: 'KIWIFY',
                 type: 'cart_abandoned',
                 value: 1,
-                metadata: {
-                    customerEmail: data.customer_email,
-                    productName: data.product_name,
-                    amount: data.amount,
-                },
                 date: new Date(),
             },
         });
@@ -135,10 +124,6 @@ export class KiwifyService {
                 platform: 'KIWIFY',
                 type: 'subscription_created',
                 value: data.amount || 0,
-                metadata: {
-                    customerEmail: data.customer_email,
-                    productName: data.product_name,
-                },
                 date: new Date(),
             },
         });
@@ -154,10 +139,6 @@ export class KiwifyService {
                 platform: 'KIWIFY',
                 type: 'subscription_cancelled',
                 value: 1,
-                metadata: {
-                    customerEmail: data.customer_email,
-                    productName: data.product_name,
-                },
                 date: new Date(),
             },
         });
@@ -174,7 +155,6 @@ export class KiwifyService {
         const existingMetric = await prisma.dailyPerformance.findFirst({
             where: {
                 date: startOfDay,
-                platform: 'KIWIFY',
             },
         });
 
@@ -182,10 +162,8 @@ export class KiwifyService {
             const updates: any = {};
 
             if (type === 'sale' || type === 'subscription') {
-                updates.sales = (existingMetric.sales || 0) + 1;
-                updates.revenue = (existingMetric.revenue || 0) + amount;
-            } else if (type === 'refund') {
-                updates.refunds = (existingMetric.refunds || 0) + 1;
+                updates.vendas = (existingMetric.vendas || 0) + 1;
+                updates.receitaGerada = (existingMetric.receitaGerada || 0) + amount;
             }
 
             await prisma.dailyPerformance.update({
@@ -196,17 +174,8 @@ export class KiwifyService {
             await prisma.dailyPerformance.create({
                 data: {
                     date: startOfDay,
-                    platform: 'KIWIFY',
-                    sales: type === 'sale' || type === 'subscription' ? 1 : 0,
-                    revenue: type === 'sale' || type === 'subscription' ? amount : 0,
-                    refunds: type === 'refund' ? 1 : 0,
-                    leads: 0,
-                    impressions: 0,
-                    clicks: 0,
-                    spend: 0,
-                    cpl: 0,
-                    cpa: 0,
-                    roi: 0,
+                    vendas: type === 'sale' || type === 'subscription' ? 1 : 0,
+                    receitaGerada: type === 'sale' || type === 'subscription' ? amount : 0,
                 },
             });
         }
@@ -283,18 +252,14 @@ export class KiwifyService {
         return sales.map(sale => ({
             id: sale.id,
             productId: sale.externalId,
-            productName: sale.productName || '',
+            productName: 'Produto Kiwify',
             customerEmail: sale.customerEmail || '',
-            customerName: sale.customerName || '',
+            customerName: 'Cliente Kiwify',
             amount: sale.amount || 0,
             status: sale.status || '',
-            paymentMethod: sale.paymentMethod || '',
+            paymentMethod: 'unknown',
             createdAt: sale.createdAt,
-            affiliate: sale.affiliateId ? {
-                id: sale.affiliateId,
-                name: sale.affiliateName || '',
-                commission: sale.commission || 0,
-            } : undefined,
+            affiliate: undefined,
             utmParams: {
                 source: sale.utmSource || undefined,
                 medium: sale.utmMedium || undefined,
