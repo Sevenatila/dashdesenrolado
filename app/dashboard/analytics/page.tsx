@@ -30,15 +30,42 @@ export default function AnalyticsPage() {
         end: new Date()
     });
 
-    // Inicializar com dados vazios
+    // Buscar métricas reais da API
     useEffect(() => {
-        const emptyData: DailyAnalytics[] = [];
+        fetchMetrics();
+    }, []);
 
-        setData(emptyData);
-        setFilteredData(emptyData);
+    const fetchMetrics = async () => {
+        try {
+            const params = new URLSearchParams({
+                startDate: dateRange.start.toISOString(),
+                endDate: dateRange.end.toISOString()
+            });
 
-        // Inicializar sumário vazio
-        setSummary({
+            const response = await fetch(`/api/analytics/metrics?${params}`);
+            if (response.ok) {
+                const result = await response.json();
+                setData(result.data || []);
+                setFilteredData(result.data || []);
+
+                // Calcular sumário inicial
+                if (result.data && result.data.length > 0) {
+                    calculateSummary(result.data);
+                }
+            } else {
+                console.error('Erro ao buscar métricas');
+                setData([]);
+                setFilteredData([]);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar métricas:', error);
+            setData([]);
+            setFilteredData([]);
+        }
+
+        // Se não houver dados, inicializar vazio
+        if (data.length === 0) {
+            setSummary({
             totalGasto: 0,
             totalCliques: 0,
             totalVisitas: 0,
@@ -57,7 +84,37 @@ export default function AnalyticsPage() {
             roi: 0,
             roas: 0
         });
-    }, []);
+        }
+    };
+
+    const calculateSummary = (metricsData: DailyAnalytics[]) => {
+        const totals = metricsData.reduce(
+            (acc, day) => ({
+                totalGasto: acc.totalGasto + day.valorGasto,
+                totalCliques: acc.totalCliques + day.cliques,
+                totalVisitas: acc.totalVisitas + day.visitas,
+                totalVendas: acc.totalVendas + day.vendas,
+                totalReceita: acc.totalReceita + (day.vendas * day.aov)
+            }),
+            { totalGasto: 0, totalCliques: 0, totalVisitas: 0, totalVendas: 0, totalReceita: 0 }
+        );
+
+        setSummary({
+            ...totals,
+            cpcMedio: totals.totalCliques > 0 ? totals.totalGasto / totals.totalCliques : 0,
+            cpvMedio: totals.totalVisitas > 0 ? totals.totalGasto / totals.totalVisitas : 0,
+            cpaMedio: totals.totalVendas > 0 ? totals.totalGasto / totals.totalVendas : 0,
+            aovMedio: totals.totalVendas > 0 ? totals.totalReceita / totals.totalVendas : 0,
+            taxaConversaoGeral: totals.totalVisitas > 0 ? (totals.totalVendas / totals.totalVisitas) * 100 : 0,
+            taxaCheckout: 0,
+            taxaOB1: 0,
+            taxaOB2: 0,
+            taxaUpsell1: 0,
+            taxaUpsell2: 0,
+            roi: totals.totalGasto > 0 ? ((totals.totalReceita - totals.totalGasto) / totals.totalGasto) * 100 : 0,
+            roas: totals.totalGasto > 0 ? totals.totalReceita / totals.totalGasto : 0
+        });
+    };
 
     // Filtrar dados quando VSL ou Plataforma mudarem
     useEffect(() => {
@@ -79,7 +136,7 @@ export default function AnalyticsPage() {
 
         // Recalcular sumário com dados filtrados
         if (filtered.length > 0) {
-            const totals = filteredData.reduce(
+            const totals = filtered.reduce(
                 (acc, day) => ({
                     totalGasto: acc.totalGasto + day.valorGasto,
                     totalCliques: acc.totalCliques + day.cliques,
@@ -107,6 +164,47 @@ export default function AnalyticsPage() {
             });
         }
     }, [selectedVSL, selectedPlatform, data]);
+
+    // Recarregar dados quando filtros mudarem
+    const handleFilterChange = async () => {
+        try {
+            const params = new URLSearchParams({
+                startDate: dateRange.start.toISOString(),
+                endDate: dateRange.end.toISOString()
+            });
+
+            if (selectedVSL && selectedVSL !== 'all') {
+                params.append('vslId', selectedVSL);
+            }
+
+            if (selectedPlatform && selectedPlatform !== 'all') {
+                params.append('platform', selectedPlatform);
+            }
+
+            const response = await fetch(`/api/analytics/metrics?${params}`);
+            if (response.ok) {
+                const result = await response.json();
+                setData(result.data || []);
+                setFilteredData(result.data || []);
+
+                // Recalcular sumário
+                if (result.data && result.data.length > 0) {
+                    calculateSummary(result.data);
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao recarregar métricas:', error);
+        }
+    };
+
+    // Atualizar dados quando filtros mudarem
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            handleFilterChange();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [selectedVSL, selectedPlatform]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("pt-BR", {
