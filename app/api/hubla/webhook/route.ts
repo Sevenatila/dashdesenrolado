@@ -162,18 +162,9 @@ export async function POST(request: NextRequest) {
       keys: Object.keys(webhookData)
     });
 
-    // Aceitar formato v2 da Hubla (com 'type' e 'event')
+    // Log formato para debug
     if ((webhookData as any).type && webhookData.event) {
-      // Processar formato v2
-      console.log('Processing Hubla v2 webhook:', (webhookData as any).type);
-
-      // Passar para processamento específico baseado no tipo
-      webhookData = {
-        event: (webhookData as any).type,
-        data: webhookData.event,
-        id: (webhookData.event as any)?.id || `hubla_${Date.now()}`,
-        version: (webhookData as any).version || '1.0.0'
-      } as any;
+      console.log('Detected Hubla v2 webhook format:', (webhookData as any).type);
     }
 
     // Log detalhado para debug
@@ -195,13 +186,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'already_processed' });
     }
 
-    // Processar evento baseado no tipo real da Hubla
+    // Processar evento baseado no formato
     if ((webhookData as any).type && webhookData.event) {
+      // Formato v2 da Hubla (com 'type' e 'event')
       await processHublaV2Event(webhookData);
-    } else {
-      // Processar formato legacy
+    } else if (webhookData.event && webhookData.data) {
+      // Formato legacy da Hubla
       const hublaService = HublaService.getInstance();
       await hublaService.processWebhookEvent(webhookData);
+    } else {
+      console.warn('Unknown webhook format:', Object.keys(webhookData));
     }
 
     // Log do evento processado
