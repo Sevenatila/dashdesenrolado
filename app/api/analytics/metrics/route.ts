@@ -21,6 +21,50 @@ export async function GET(request: NextRequest) {
 
         console.log('Fetching metrics for:', { vslId, platform, startDate, endDate });
 
+        // RETORNAR DADOS DE TESTE PRIMEIRO
+        const testMetrics: DailyAnalytics[] = [
+            {
+                date: new Date(),
+                vslId: 'test-vsl',
+                vslName: 'VSL Teste',
+                platform: platform || 'TESTE',
+                valorGasto: 150.50,
+                cliques: 1200,
+                cpc: 0.12,
+                visitas: 800,
+                cpv: 0.19,
+                connectRate: 66.7,
+                passagem: 45.2,
+                visuUnicaVSL: 650,
+                cpvv: 0.23,
+                iniciouCheckout: 98,
+                convCheckout: 12.25,
+                vendas: 12,
+                aov: 97.00,
+                cpa: 12.54,
+                vendasOB1: 5,
+                convOB1: 41.7,
+                vendasOB2: 2,
+                convOB2: 16.7,
+                upsell1: 3,
+                convUpsell1: 25.0,
+                upsell2: 1,
+                convUpsell2: 8.3,
+                downsell: 1,
+                observacoes: 'Teste de dados'
+            }
+        ];
+
+        console.log('Returning test metrics:', testMetrics);
+
+        return NextResponse.json({
+            success: true,
+            data: testMetrics,
+            count: testMetrics.length
+        });
+
+        // CÓDIGO COMPLEXO COMENTADO PARA DEBUG
+        /*
         // Buscar dados de diferentes fontes
         const metrics: DailyAnalytics[] = [];
 
@@ -222,6 +266,7 @@ export async function GET(request: NextRequest) {
             data: metrics,
             count: metrics.length
         });
+        */
 
     } catch (error) {
         console.error("Analytics Metrics API Error:", error);

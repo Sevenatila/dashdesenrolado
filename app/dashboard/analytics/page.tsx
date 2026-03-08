@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import MetricsTable from "@/components/analytics/MetricsTable";
 import VSLFilter from "@/components/analytics/VSLFilter";
 import PlatformFilter from "@/components/analytics/PlatformFilter";
+import DateFilter from "@/components/analytics/DateFilter";
 import { DailyAnalytics, MetricsSummary } from "@/types/analytics";
 import {
     TrendingUp,
@@ -16,7 +17,8 @@ import {
     Upload,
     Filter,
     BarChart3,
-    Activity
+    Activity,
+    RefreshCw
 } from "lucide-react";
 
 export default function AnalyticsPage() {
@@ -29,22 +31,45 @@ export default function AnalyticsPage() {
         start: new Date(new Date().setDate(new Date().getDate() - 30)),
         end: new Date()
     });
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Buscar métricas reais da API
     useEffect(() => {
-        fetchMetrics();
+        // Delay para garantir que o componente está montado
+        const timer = setTimeout(() => {
+            fetchMetrics();
+        }, 100);
+
+        return () => clearTimeout(timer);
     }, []);
 
     const fetchMetrics = async () => {
         try {
+            setIsRefreshing(true);
+            console.log('Fetching metrics...', { dateRange, selectedVSL, selectedPlatform });
+
             const params = new URLSearchParams({
                 startDate: dateRange.start.toISOString(),
                 endDate: dateRange.end.toISOString()
             });
 
+            if (selectedVSL && selectedVSL !== 'all') {
+                params.append('vslId', selectedVSL);
+            }
+
+            if (selectedPlatform && selectedPlatform !== 'all') {
+                params.append('platform', selectedPlatform);
+            }
+
+            console.log('API URL:', `/api/analytics/metrics?${params.toString()}`);
+
             const response = await fetch(`/api/analytics/metrics?${params}`);
+            console.log('Response status:', response.status);
+
             if (response.ok) {
                 const result = await response.json();
+                console.log('Metrics result:', result);
+
                 const metricsData = result.data || [];
                 setData(metricsData);
                 setFilteredData(metricsData);
@@ -75,7 +100,8 @@ export default function AnalyticsPage() {
                     });
                 }
             } else {
-                console.error('Erro ao buscar métricas');
+                const errorText = await response.text();
+                console.error('Erro ao buscar métricas:', response.status, errorText);
                 setData([]);
                 setFilteredData([]);
                 setSummary({
@@ -121,6 +147,8 @@ export default function AnalyticsPage() {
                 roi: 0,
                 roas: 0
             });
+        } finally {
+            setIsRefreshing(false);
         }
     };
 
@@ -153,27 +181,20 @@ export default function AnalyticsPage() {
         });
     };
 
-    // Filtrar dados quando VSL ou Plataforma mudarem
+    // NÃO FILTRAR LOCALMENTE - A API JÁ FAZ ISSO!
     useEffect(() => {
-        let filtered = [...data];
+        console.log('🔄 DATA UPDATE TRIGGERED!');
+        console.log('📊 Data from API:', data.length, 'items');
+        console.log('🎯 Selected VSL:', selectedVSL);
+        console.log('🏢 Selected Platform:', selectedPlatform);
 
-        // Filtrar por VSL
-        if (selectedVSL) {
-            filtered = filtered.filter(item => item.vslId === selectedVSL);
-        }
-
-        // Filtrar por Plataforma
-        if (selectedPlatform) {
-            filtered = filtered.filter(item =>
-                item.platform?.toLowerCase() === selectedPlatform.toLowerCase()
-            );
-        }
-
-        setFilteredData(filtered);
+        // Usar os dados diretamente da API sem filtrar novamente
+        setFilteredData(data);
+        console.log('✅ Using API data directly:', data);
 
         // Recalcular sumário com dados filtrados
-        if (filtered.length > 0) {
-            const totals = filtered.reduce(
+        if (data.length > 0) {
+            const totals = data.reduce(
                 (acc, day) => ({
                     totalGasto: acc.totalGasto + day.valorGasto,
                     totalCliques: acc.totalCliques + day.cliques,
@@ -205,20 +226,31 @@ export default function AnalyticsPage() {
     // Recarregar dados quando filtros mudarem
     const handleFilterChange = async () => {
         try {
+            console.log('🔄 HANDLE FILTER CHANGE CALLED!');
+            console.log('📅 Date range:', dateRange);
+            console.log('🎯 Selected VSL:', selectedVSL);
+            console.log('🏢 Selected Platform:', selectedPlatform);
+
+            setIsRefreshing(true);
             const params = new URLSearchParams({
                 startDate: dateRange.start.toISOString(),
                 endDate: dateRange.end.toISOString()
             });
 
             if (selectedVSL && selectedVSL !== 'all') {
+                console.log('➕ Adding VSL param:', selectedVSL);
                 params.append('vslId', selectedVSL);
             }
 
             if (selectedPlatform && selectedPlatform !== 'all') {
+                console.log('➕ Adding Platform param:', selectedPlatform);
                 params.append('platform', selectedPlatform);
             }
 
-            const response = await fetch(`/api/analytics/metrics?${params}`);
+            const finalUrl = `/api/analytics/metrics?${params}`;
+            console.log('🌐 Final API URL:', finalUrl);
+
+            const response = await fetch(finalUrl);
             if (response.ok) {
                 const result = await response.json();
                 setData(result.data || []);
@@ -231,19 +263,55 @@ export default function AnalyticsPage() {
             }
         } catch (error) {
             console.error('Erro ao recarregar métricas:', error);
+        } finally {
+            setIsRefreshing(false);
         }
+    };
+
+    // Função para botão de atualização manual
+    const handleManualRefresh = async () => {
+        console.log('🔄 MANUAL REFRESH BUTTON CLICKED!');
+        console.log('⚙️ Current state:', { selectedVSL, selectedPlatform, dateRange });
+        await handleFilterChange();
     };
 
     // Atualizar dados quando filtros mudarem
     useEffect(() => {
+        console.log('🎯🏢 FILTER CHANGE EFFECT TRIGGERED!');
+        console.log('🎯 selectedVSL:', selectedVSL);
+        console.log('🏢 selectedPlatform:', selectedPlatform);
+
         if (selectedVSL !== null || selectedPlatform !== null) {
+            console.log('✅ Filter condition met, calling handleFilterChange in 500ms');
             const timer = setTimeout(() => {
+                console.log('⏰ Timer triggered, calling handleFilterChange now');
                 handleFilterChange();
             }, 500);
 
-            return () => clearTimeout(timer);
+            return () => {
+                console.log('🚮 Cleaning up timer');
+                clearTimeout(timer);
+            };
+        } else {
+            console.log('❌ No filter selected, skipping API call');
         }
     }, [selectedVSL, selectedPlatform]);
+
+    // Atualizar dados quando período de data mudar
+    useEffect(() => {
+        console.log('📅 DATE RANGE EFFECT TRIGGERED!');
+        console.log('📅 New date range:', dateRange);
+
+        const timer = setTimeout(() => {
+            console.log('📅⏰ Date timer triggered, calling handleFilterChange');
+            handleFilterChange();
+        }, 500);
+
+        return () => {
+            console.log('📅🚮 Cleaning up date timer');
+            clearTimeout(timer);
+        };
+    }, [dateRange]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("pt-BR", {
@@ -266,6 +334,10 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="flex gap-3">
+                    <DateFilter
+                        dateRange={dateRange}
+                        onDateRangeChange={setDateRange}
+                    />
                     <VSLFilter
                         selectedVSL={selectedVSL}
                         onVSLChange={setSelectedVSL}
@@ -274,9 +346,13 @@ export default function AnalyticsPage() {
                         selectedPlatform={selectedPlatform}
                         onPlatformChange={setSelectedPlatform}
                     />
-                    <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                        <Filter className="w-4 h-4" />
-                        Mais Filtros
+                    <button
+                        onClick={handleManualRefresh}
+                        disabled={isRefreshing}
+                        className="px-4 py-2 bg-blue-600 text-white border border-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Atualizando...' : 'Atualizar'}
                     </button>
                     <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
                         <Upload className="w-4 h-4" />
@@ -384,19 +460,7 @@ export default function AnalyticsPage() {
                         </span>
                     )}
                 </h2>
-                {filteredData.length > 0 ? (
-                    <MetricsTable data={filteredData} />
-                ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-                        <div className="text-center">
-                            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum dado disponível</h3>
-                            <p className="text-gray-600">
-                                Importe seus dados ou aguarde a sincronização das métricas para visualizar o dashboard.
-                            </p>
-                        </div>
-                    </div>
-                )}
+                <MetricsTable data={filteredData} />
             </div>
         </div>
     );

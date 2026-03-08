@@ -27,7 +27,21 @@
       "Bash(git commit -m \"feat: integrate real metrics data in Analytics dashboard\n\n- Created API endpoint to fetch real metrics from VTurb and database\n- Connected VSL filter to fetch specific video metrics\n- Integrated sales data from Hubla and Kiwify\n- Auto-calculate ROI, ROAS, and conversion rates with real data\n- Dashboard now shows actual plays, sales, and engagement metrics\")",
       "Bash(npx vercel logs dashdesenrolado-j8s0y3yxg-atila-gomes-pazs-projects.vercel.app)",
       "Bash(git commit -m \"fix: resolve client-side error in Analytics dashboard\n\n- Fixed useEffect dependency issues\n- Improved error handling in fetchMetrics\n- Ensured proper state initialization\n- Added null checks for filters\")",
-      "Bash(git commit -m \"fix: resolve production errors and clean up menu\n\n- Fixed VSLFilter array check to prevent find error\n- Removed unimplemented pages from menu (Meta Ads, VTurb, Settings)\n- Added proper null checks for API responses\n- Fixed data structure validation in VSL filter\")"
+      "Bash(git commit -m \"fix: resolve production errors and clean up menu\n\n- Fixed VSLFilter array check to prevent find error\n- Removed unimplemented pages from menu (Meta Ads, VTurb, Settings)\n- Added proper null checks for API responses\n- Fixed data structure validation in VSL filter\")",
+      "Bash(dir)",
+      "Bash(curl -X GET \"http://localhost:3000/api/analytics/metrics?platform=KIWIFY\" --max-time 10)",
+      "Bash(npx vercel logs dashdesenrolado-o2n9i78g7-atila-gomes-pazs-projects.vercel.app)",
+      "WebFetch(domain:dashdesenrolado-8n40hnvs2-atila-gomes-pazs-projects.vercel.app)",
+      "Bash(curl -I https://dashdesenrolado-8n40hnvs2-atila-gomes-pazs-projects.vercel.app/dashboard/analytics)",
+      "Bash(curl -I http://localhost:3000/dashboard/analytics)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(npx vercel logs dashdesenrolado-8n40hnvs2-atila-gomes-pazs-projects.vercel.app)",
+      "Bash(curl -X GET \"http://localhost:3000/api/analytics/metrics?platform=HUBLA\" --max-time 10)",
+      "Bash(npm start)",
+      "Bash(taskkill /F /PID 38156)",
+      "Bash(taskkill /PID 38156 /F)",
+      "Bash(cmd /c \"taskkill /PID 38156 /F\")"
     ],
     "deny": [],
     "ask": []

@@ -5,6 +5,7 @@ import {
   HublaDashboardMetrics,
   HublaEventType
 } from '@/types/hubla';
+import prisma from '@/lib/prisma';
 
 export class HublaService {
   private static instance: HublaService;
@@ -48,6 +49,10 @@ export class HublaService {
           await this.processPaymentApproved(event.data);
           break;
 
+        case HublaEventType.SALE_REFUNDED:
+          await this.processRefund(event.data);
+          break;
+
         default:
           console.log('Unhandled event type:', event.event);
       }
@@ -58,15 +63,41 @@ export class HublaService {
   }
 
   private async processSaleEvent(saleData: HublaSale): Promise<void> {
-    // Aqui você pode salvar no banco de dados, atualizar métricas, etc.
-    console.log('Processing sale:', saleData);
+    console.log('Processing Hubla sale:', saleData);
 
-    // Exemplo: salvar no banco de dados usando Prisma
-    // await prisma.hublaSale.upsert({
-    //   where: { hubla_id: saleData.id },
-    //   update: saleData,
-    //   create: saleData
-    // });
+    try {
+      // Salvar venda no modelo Sale existente
+      await prisma.sale.upsert({
+        where: {
+          externalId: String(saleData.id)
+        },
+        update: {
+          amount: Number(saleData.amount || 0),
+          status: String(saleData.status || 'approved').toLowerCase(),
+          customerEmail: String(saleData.customer?.email || ''),
+        },
+        create: {
+          platform: 'HUBLA',
+          externalId: String(saleData.id),
+          amount: Number(saleData.amount || 0),
+          status: String(saleData.status || 'approved').toLowerCase(),
+          customerEmail: String(saleData.customer?.email || ''),
+          createdAt: saleData.created_at ? new Date(saleData.created_at) : new Date(),
+        },
+      });
+
+      console.log('Hubla sale saved successfully');
+
+      // Atualizar métricas diárias
+      await this.updateDailyMetrics(
+        saleData.created_at ? new Date(saleData.created_at) : new Date(),
+        Number(saleData.amount || 0),
+        'sale'
+      );
+    } catch (error) {
+      console.error('Error saving Hubla sale:', error);
+      throw error;
+    }
   }
 
   private async processLeadEvent(leadData: HublaLead): Promise<void> {
@@ -81,9 +112,56 @@ export class HublaService {
   }
 
   private async processPaymentApproved(paymentData: any): Promise<void> {
-    console.log('Processing payment approval:', paymentData);
+    console.log('Processing Hubla payment approval:', paymentData);
 
-    // Lógica para quando um pagamento é aprovado
+    try {
+      // Atualizar status da venda para aprovada
+      if (paymentData.id) {
+        await prisma.sale.updateMany({
+          where: {
+            platform: 'HUBLA',
+            externalId: String(paymentData.id)
+          },
+          data: {
+            status: 'approved'
+          }
+        });
+
+        console.log('Hubla payment approved and sale updated');
+      }
+    } catch (error) {
+      console.error('Error processing Hubla payment approval:', error);
+    }
+  }
+
+  // Processar evento de reembolso
+  private async processRefund(refundData: any): Promise<void> {
+    console.log('Processing Hubla refund:', refundData);
+
+    try {
+      if (refundData.id) {
+        await prisma.sale.updateMany({
+          where: {
+            platform: 'HUBLA',
+            externalId: String(refundData.id)
+          },
+          data: {
+            status: 'refunded'
+          }
+        });
+
+        // Atualizar métricas para reembolso
+        await this.updateDailyMetrics(
+          refundData.created_at ? new Date(refundData.created_at) : new Date(),
+          Number(refundData.amount || 0),
+          'refund'
+        );
+
+        console.log('Hubla refund processed successfully');
+      }
+    } catch (error) {
+      console.error('Error processing Hubla refund:', error);
+    }
   }
 
   // Calcular métricas do dashboard
@@ -114,5 +192,33 @@ export class HublaService {
   async getLeadsByPeriod(startDate: string, endDate: string): Promise<HublaLead[]> {
     // Implementar busca no banco de dados
     return [];
+  }
+
+  // Atualizar métricas diárias
+  private async updateDailyMetrics(date: Date, amount: number, type: 'sale' | 'refund'): Promise<void> {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      // Buscar ou criar registro de performance do dia
+      const performance = await prisma.dailyPerformance.upsert({
+        where: {
+          date: startOfDay
+        },
+        update: {
+          vendas: type === 'sale' ? { increment: 1 } : { decrement: 1 },
+          receitaGerada: type === 'sale' ? { increment: amount } : { decrement: amount },
+        },
+        create: {
+          date: startOfDay,
+          vendas: type === 'sale' ? 1 : 0,
+          receitaGerada: type === 'sale' ? amount : 0,
+        },
+      });
+
+      console.log(`Daily metrics updated for ${startOfDay.toISOString().split('T')[0]}: ${type} ${amount}`);
+    } catch (error) {
+      console.error('Error updating daily metrics:', error);
+    }
   }
 }

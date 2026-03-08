@@ -24,9 +24,13 @@ export default function PlatformFilter({ selectedPlatform, onPlatformChange }: P
     ];
 
     const handleSelect = (platformId: string) => {
+        console.log('🏢 PLATFORM FILTER SELECTED:', platformId);
+
         if (platformId === 'all') {
+            console.log('🏢 Setting Platform to null (all)');
             onPlatformChange(null);
         } else {
+            console.log('🏢 Setting Platform to:', platformId);
             onPlatformChange(platformId);
         }
         setIsOpen(false);
