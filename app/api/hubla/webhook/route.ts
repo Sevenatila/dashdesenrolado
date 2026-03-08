@@ -169,10 +169,16 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Verificar se tem os campos obrigatórios (formato v1)
-    if (!webhookData.event || !webhookData.data) {
-      console.warn('Webhook missing event or data, but processing anyway');
-      // Não retornar erro para não bloquear
+    // Log detalhado para debug
+    console.log('Full webhook payload:', JSON.stringify(webhookData, null, 2));
+
+    // Verificar se tem os campos obrigatórios
+    if (!webhookData.event && !webhookData.type) {
+      console.error('Webhook missing both event and type fields');
+      return NextResponse.json(
+        { error: 'Missing required fields: event or type' },
+        { status: 400 }
+      );
     }
 
     // Verificar header de idempotência
