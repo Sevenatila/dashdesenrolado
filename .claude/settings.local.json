@@ -71,7 +71,8 @@
       "Bash(curl -X GET \"http://localhost:3000/api/analytics/metrics\" --max-time 5)",
       "Bash(node check-prod-db.js)",
       "Bash(node import-historical-sales.js)",
-      "Bash(git commit -m \"fix: Kiwify webhook authentication - accept token in multiple formats\n\n- Now accepts token in Authorization header, X-Kiwify-Token, X-Token, query param, or body\n- Added debug logging to identify how Kiwify sends the token\n- This should fix webhook failures from Kiwify platform\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: Kiwify webhook authentication - accept token in multiple formats\n\n- Now accepts token in Authorization header, X-Kiwify-Token, X-Token, query param, or body\n- Added debug logging to identify how Kiwify sends the token\n- This should fix webhook failures from Kiwify platform\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"feat: add correct Kiwify webhook endpoint\n\n- Created /api/webhooks/kiwify route (correct URL)\n- Handles Kiwify''s actual webhook format with order object\n- Processes signature validation (optional)\n- Converts amount from centavos to reais\n- Saves all UTM parameters for tracking\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
