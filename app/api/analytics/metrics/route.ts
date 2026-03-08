@@ -30,15 +30,17 @@ export async function GET(request: NextRequest) {
         // Buscar dados de diferentes fontes
         const metrics: DailyAnalytics[] = [];
 
-        // 1. Buscar dados do VTurb para VSL
+        // 1. Buscar dados do VTurb para VSL (independente - não bloquear se falhar)
+        let vslMetrics: DailyAnalytics[] = [];
         if (process.env.VTURB_API_KEY) {
-            const vturb = new VTurbClient(process.env.VTURB_API_KEY);
+            try {
+                const vturb = new VTurbClient(process.env.VTURB_API_KEY);
 
-            // Buscar todos os players se não especificado
-            const players = await vturb.listPlayers();
-            const vsls = vslId && vslId !== 'all'
-                ? players?.filter((p: any) => p.id === vslId)
-                : players;
+                // Buscar todos os players se não especificado
+                const players = await vturb.listPlayers();
+                const vsls = vslId && vslId !== 'all'
+                    ? players?.filter((p: any) => p.id === vslId)
+                    : players;
 
             if (vsls && vsls.length > 0) {
                 for (const vsl of vsls) {
@@ -133,15 +135,18 @@ export async function GET(request: NextRequest) {
                                 observacoes: `VSL: ${vsl.name || vsl.id}`
                             };
 
-                            metrics.push(metric);
+                            vslMetrics.push(metric);
                         }
                     }
                 }
             }
+            } catch (vTurbError) {
+                console.warn('VTurb API failed, continuing without VSL data:', vTurbError);
+            }
         }
 
-        // 2. Se não houver dados do VTurb, buscar do banco
-        if (metrics.length === 0) {
+        // 2. SEMPRE buscar dados do banco (independente do VTurb)
+        console.log('Fetching sales data from database...');
             const performances = await prisma.dailyPerformance.findMany({
                 where: {
                     date: {
@@ -218,15 +223,19 @@ export async function GET(request: NextRequest) {
 
                 metrics.push(metric);
             }
-        }
+
+        // 3. Combinar dados do VTurb e banco
+        const allMetrics = [...vslMetrics, ...metrics];
+
+        console.log(`Combined metrics: ${vslMetrics.length} from VTurb + ${metrics.length} from DB = ${allMetrics.length} total`);
 
         // Ordenar por data
-        metrics.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        allMetrics.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return NextResponse.json({
             success: true,
-            data: metrics,
-            count: metrics.length
+            data: allMetrics,
+            count: allMetrics.length
         });
 
     } catch (error) {
