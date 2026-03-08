@@ -149,31 +149,31 @@ export async function POST(request: NextRequest) {
     console.log('Hubla webhook structure:', {
       hasEvent: !!webhookData.event,
       hasData: !!webhookData.data,
-      hasType: !!webhookData.type,
-      hasVersion: !!webhookData.version,
-      type: webhookData.type,
+      hasType: !!(webhookData as any).type,
+      hasVersion: !!(webhookData as any).version,
+      type: (webhookData as any).type,
       keys: Object.keys(webhookData)
     });
 
     // Aceitar formato v2 da Hubla (com 'type' e 'event')
-    if (webhookData.type && webhookData.event) {
+    if ((webhookData as any).type && webhookData.event) {
       // Processar formato v2
-      console.log('Processing Hubla v2 webhook:', webhookData.type);
+      console.log('Processing Hubla v2 webhook:', (webhookData as any).type);
 
       // Passar para processamento específico baseado no tipo
       webhookData = {
-        event: webhookData.type,
+        event: (webhookData as any).type,
         data: webhookData.event,
-        id: webhookData.event?.id || `hubla_${Date.now()}`,
-        version: webhookData.version
-      };
+        id: (webhookData.event as any)?.id || `hubla_${Date.now()}`,
+        version: (webhookData as any).version || '1.0.0'
+      } as any;
     }
 
     // Log detalhado para debug
     console.log('Full webhook payload:', JSON.stringify(webhookData, null, 2));
 
     // Verificar se tem os campos obrigatórios
-    if (!webhookData.event && !webhookData.type) {
+    if (!webhookData.event && !(webhookData as any).type) {
       console.error('Webhook missing both event and type fields');
       return NextResponse.json(
         { error: 'Missing required fields: event or type' },
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Processar evento baseado no tipo real da Hubla
-    if (webhookData.type && webhookData.event) {
+    if ((webhookData as any).type && webhookData.event) {
       await processHublaV2Event(webhookData);
     } else {
       // Processar formato legacy

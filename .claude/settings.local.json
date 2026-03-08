@@ -86,7 +86,11 @@
       "WebFetch(domain:hubla.gitbook.io)",
       "WebSearch",
       "Bash(npx vercel logs dashdesenrolado.vercel.app --since 5m)",
-      "Bash(git commit -m \"debug: add detailed webhook logging to identify NewSale event structure\n\n- Added full webhook payload logging\n- Improved error messages for missing fields\n- This will help identify exact structure of NewSale events\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"debug: add detailed webhook logging to identify NewSale event structure\n\n- Added full webhook payload logging\n- Improved error messages for missing fields\n- This will help identify exact structure of NewSale events\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(npx vercel logs dashdesenrolado.vercel.app)",
+      "Bash(curl -X POST \"https://dashdesenrolado.vercel.app/api/hubla/webhook\" -H \"Content-Type: application/json\" -H \"x-hubla-token: Gn2BEiKlEl8cwe6sk7DMlKQ3qliE3JW3Q0NsEJGRZIlbcFpZa6IYT1ZK6Vciywjt\" -H \"x-hubla-idempotency: test-12345\" -d \"{\"\"type\"\":\"\"NewSale\"\",\"\"event\"\":{\"\"userId\"\":\"\"test123\"\",\"\"userName\"\":\"\"Teste User\"\",\"\"userEmail\"\":\"\"teste@test.com\"\",\"\"transactionId\"\":\"\"test-transaction-123\"\",\"\"totalAmount\"\":100.50,\"\"createdAt\"\":\"\"2026-03-08T18:00:00Z\"\"},\"\"version\"\":\"\"1.0.0\"\"}\" -v)",
+      "Bash(curl -X POST \"http://localhost:3000/api/hubla/webhook\" -H \"Content-Type: application/json\" -H \"x-hubla-token: Gn2BEiKlEl8cwe6sk7DMlKQ3qliE3JW3Q0NsEJGRZIlbcFpZa6IYT1ZK6Vciywjt\" -d \"{\"\"type\"\":\"\"NewSale\"\",\"\"event\"\":{\"\"userId\"\":\"\"test123\"\",\"\"userName\"\":\"\"Teste User\"\",\"\"userEmail\"\":\"\"teste@test.com\"\",\"\"transactionId\"\":\"\"test-transaction-123\"\",\"\"totalAmount\"\":100.50,\"\"createdAt\"\":\"\"2026-03-08T18:00:00Z\"\"},\"\"version\"\":\"\"1.0.0\"\"}\" --max-time 10)",
+      "Bash(git commit -m \"fix: resolve TypeScript errors in Hubla webhook\n\n- Fixed type casting for webhook.type and webhook.event\n- Build now passes without errors\n- Ready for production deployment\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
