@@ -13,41 +13,71 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
 
     switch (eventType) {
       case 'invoice.paid':
+      case 'invoice.payment_succeeded':  // Adicionar este evento da Hubla
       case 'payment.approved':
       case 'purchase.approved':
+      case 'NewSale':  // Formato v1 da Hubla
         // Processar pagamento/venda aprovado
-        if (eventData.lead && eventData.lead.amount) {
-          const leadId = eventData.lead.id;
-          const amount = eventData.lead.amount.totalCents / 100; // Converter de centavos
-          const email = eventData.lead.email;
-          const fullName = eventData.lead.fullName;
+        let invoiceId, amount, email, fullName;
+
+        if (eventType === 'NewSale') {
+          // Formato v1 da Hubla (NewSale)
+          invoiceId = eventData.transactionId;
+          amount = eventData.totalAmount;
+          email = eventData.userEmail;
+          fullName = eventData.userName;
+        } else {
+          // Formato v2 da Hubla (invoice.payment_succeeded)
+          const invoiceData = eventData.invoice || eventData.lead;
+          const userData = eventData.user || eventData.payer || invoiceData?.payer;
+          invoiceId = invoiceData?.id;
+          amount = invoiceData?.amount?.totalCents / 100; // Converter de centavos
+          email = userData?.email;
+          fullName = userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : '';
+        }
+
+        if (invoiceId && amount) {
 
           // Verificar se já existe
           const existing = await prisma.sale.findFirst({
-            where: { externalId: leadId }
+            where: { externalId: invoiceId }
           });
 
           if (!existing) {
             await prisma.sale.create({
               data: {
                 platform: 'HUBLA',
-                externalId: leadId,
+                externalId: invoiceId,
                 amount: amount,
                 status: 'approved',
                 customerEmail: email || 'unknown@hubla.com',
-                createdAt: eventData.lead.createdAt ? new Date(eventData.lead.createdAt) : new Date(),
-                utmSource: eventData.lead.session?.utm?.source || null,
-                utmMedium: eventData.lead.session?.utm?.medium || null,
-                utmCampaign: eventData.lead.session?.utm?.campaign || null,
-                utmContent: eventData.lead.session?.utm?.content || null,
-                utmTerm: eventData.lead.session?.utm?.term || null
+                createdAt: eventType === 'NewSale'
+                  ? (eventData.createdAt ? new Date(eventData.createdAt) : new Date())
+                  : (eventData.invoice?.createdAt ? new Date(eventData.invoice.createdAt) : new Date()),
+                utmSource: eventType === 'NewSale'
+                  ? null  // NewSale não tem UTM no formato mostrado
+                  : (eventData.invoice?.paymentSession?.utm?.source || null),
+                utmMedium: eventType === 'NewSale'
+                  ? null
+                  : (eventData.invoice?.paymentSession?.utm?.medium || null),
+                utmCampaign: eventType === 'NewSale'
+                  ? null
+                  : (eventData.invoice?.paymentSession?.utm?.campaign || null),
+                utmContent: eventType === 'NewSale'
+                  ? null
+                  : (eventData.invoice?.paymentSession?.utm?.content || null),
+                utmTerm: eventType === 'NewSale'
+                  ? null
+                  : (eventData.invoice?.paymentSession?.utm?.term || null)
               }
             });
 
-            console.log(`✅ Hubla v2 sale saved: ${leadId} - R$ ${amount} - ${email}`);
+            console.log(`✅ Hubla v2 sale saved: ${invoiceId} - R$ ${amount} - ${email}`);
 
             // Atualizar métricas diárias
-            const date = eventData.lead.createdAt ? new Date(eventData.lead.createdAt) : new Date();
+            const date = eventType === 'NewSale'
+              ? (eventData.createdAt ? new Date(eventData.createdAt) : new Date())
+              : (eventData.invoice?.createdAt ? new Date(eventData.invoice.createdAt) : new Date());
             const startOfDay = new Date(date);
             startOfDay.setHours(0, 0, 0, 0);
 

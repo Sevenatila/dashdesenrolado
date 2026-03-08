@@ -73,7 +73,14 @@
       "Bash(node import-historical-sales.js)",
       "Bash(git commit -m \"fix: Kiwify webhook authentication - accept token in multiple formats\n\n- Now accepts token in Authorization header, X-Kiwify-Token, X-Token, query param, or body\n- Added debug logging to identify how Kiwify sends the token\n- This should fix webhook failures from Kiwify platform\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(git commit -m \"feat: add correct Kiwify webhook endpoint\n\n- Created /api/webhooks/kiwify route (correct URL)\n- Handles Kiwify''s actual webhook format with order object\n- Processes signature validation (optional)\n- Converts amount from centavos to reais\n- Saves all UTM parameters for tracking\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(git commit -m \"fix: update Hubla webhook to handle v2 format and real sale events\n\n- Fixed webhook to accept Hubla v2 format with ''type'' and ''event'' structure\n- Added processing for invoice.paid, payment.approved, purchase.approved events\n- Converts totalCents to reais correctly\n- Saves all UTM parameters from session data\n- Handles lead.abandoned_checkout events\n- No longer returns 400 errors for missing legacy fields\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: update Hubla webhook to handle v2 format and real sale events\n\n- Fixed webhook to accept Hubla v2 format with ''type'' and ''event'' structure\n- Added processing for invoice.paid, payment.approved, purchase.approved events\n- Converts totalCents to reais correctly\n- Saves all UTM parameters from session data\n- Handles lead.abandoned_checkout events\n- No longer returns 400 errors for missing legacy fields\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/webhooks/hubla\" --max-time 10)",
+      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/hubla/webhook\" --max-time 10)",
+      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/webhooks/kiwify\" --max-time 10)",
+      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/analytics/metrics\" --max-time 10)",
+      "Bash(node test-vturb-api.js)",
+      "Bash(node delete-test-sales.js)",
+      "Bash(git commit -m \"fix: add support for Hubla NewSale event format\n\n- Added NewSale to supported event types\n- Handle both v1 (NewSale) and v2 (invoice.payment_succeeded) formats\n- NewSale uses: transactionId, totalAmount, userEmail, userName\n- v2 uses: invoice.id, amount.totalCents, user.email, user.firstName/lastName\n- Adjusted date and UTM parsing for different formats\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
