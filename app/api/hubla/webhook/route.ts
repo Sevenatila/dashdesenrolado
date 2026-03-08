@@ -36,14 +36,20 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
           fullName = userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : '';
         }
 
+        console.log('Processed webhook data:', { invoiceId, amount, email, fullName, eventType });
+
         if (invoiceId && amount) {
+          console.log('Attempting to save sale to database...');
 
           // Verificar se já existe
           const existing = await prisma.sale.findFirst({
             where: { externalId: invoiceId }
           });
 
+          console.log('Existing sale check:', existing ? 'Found existing' : 'No existing sale');
+
           if (!existing) {
+            console.log('Creating new sale record...');
             await prisma.sale.create({
               data: {
                 platform: 'HUBLA',
@@ -112,7 +118,8 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
     }
   } catch (error) {
     console.error('Error processing Hubla v2 event:', error);
-    // Não jogar erro para não bloquear webhook
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    throw error; // Jogar erro para que webhook retorne 500
   }
 }
 
