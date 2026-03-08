@@ -48,14 +48,13 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
                     // Verificação defensiva rigorosa dos dados
                     const options: VSLOption[] = [];
 
-                    if (data &&
-                        typeof data === 'object' &&
-                        data.players &&
-                        Array.isArray(data.players) &&
-                        data.players.length > 0) {
+                    // A API retorna { players: [...] }, não um array direto
+                    const playersArray = data.players || data;
+
+                    if (Array.isArray(playersArray) && playersArray.length > 0) {
 
                         // Processar cada player com verificação individual
-                        for (const player of data.players) {
+                        for (const player of playersArray) {
                             try {
                                 if (player && typeof player === 'object') {
                                     options.push({
@@ -126,13 +125,17 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
     // Acesso defensivo à opção selecionada
     const selectedOption = React.useMemo(() => {
         try {
-            if (Array.isArray(vslOptions) && vslOptions.length > 0) {
-                const found = vslOptions.find(opt => opt && opt.id === (selectedVSL || 'all'));
-                return found || null;
+            // Verificação rigorosa se vslOptions é array válido
+            if (!vslOptions || !Array.isArray(vslOptions) || vslOptions.length === 0) {
+                console.warn('vslOptions não é array válido:', vslOptions);
+                return null;
             }
-            return null;
+
+            const found = vslOptions.find(opt => opt && opt.id === (selectedVSL || 'all'));
+            return found || null;
         } catch (error) {
-            console.warn('Erro ao buscar opção selecionada:', error);
+            console.error('Erro ao buscar opção selecionada:', error);
+            console.error('vslOptions type:', typeof vslOptions, 'value:', vslOptions);
             return null;
         }
     }, [vslOptions, selectedVSL]);

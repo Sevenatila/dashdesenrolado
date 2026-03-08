@@ -25,7 +25,8 @@ export default function PlayerSelector() {
                 const res = await fetch("/api/vturb/players");
                 if (res.ok) {
                     const data = await res.json();
-                    setPlayers(data);
+                    // A API retorna { players: [...] }, não um array direto
+                    setPlayers(data.players || []);
                 }
             } catch (error) {
                 console.error("Erro ao buscar players:", error);
@@ -36,7 +37,7 @@ export default function PlayerSelector() {
         fetchPlayers();
     }, []);
 
-    const selectedPlayer = players.find(p => p.id === selectedId);
+    const selectedPlayer = Array.isArray(players) ? players.find(p => p.id === selectedId) : null;
 
     const handleSelect = (playerId: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -50,9 +51,9 @@ export default function PlayerSelector() {
         setSearch("");
     };
 
-    const filteredPlayers = players.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredPlayers = Array.isArray(players)
+        ? players.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+        : [];
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

@@ -97,7 +97,8 @@
       "Bash(npx vercel logs dashdesenrolado.vercel.app --since 3m)",
       "Bash(git commit -m \"fix: remove incorrect webhook data transformation\n\n- Removed webhook data transformation that was breaking event processing\n- NewSale and invoice.payment_succeeded events now go to correct handler\n- Fixed ''Unhandled event type'' errors\n- Events should now be processed correctly\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/test-metrics\" --max-time 15)",
-      "Bash(git commit -m \"fix: make analytics data sources independent\n\n- VTurb API failures no longer block sales data\n- Database sales data always fetched regardless of VTurb status\n- Added try-catch around VTurb calls with fallback\n- Each data source (VTurb, Sales, Metrics) is now independent\n- Dashboard will show sales data even if VTurb key is invalid\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: make analytics data sources independent\n\n- VTurb API failures no longer block sales data\n- Database sales data always fetched regardless of VTurb status\n- Added try-catch around VTurb calls with fallback\n- Each data source (VTurb, Sales, Metrics) is now independent\n- Dashboard will show sales data even if VTurb key is invalid\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/test-metrics\" --max-time 10)"
     ],
     "deny": [],
     "ask": []
