@@ -4,17 +4,55 @@ import { KiwifyWebhookEvent } from '@/types/kiwify';
 
 export async function POST(request: NextRequest) {
     try {
-        const authHeader = request.headers.get('authorization');
-        const token = authHeader?.replace('Bearer ', '');
+        // Tentar pegar o token de várias formas possíveis
+        let token = null;
 
-        if (!token || !await KiwifyService.validateWebhook(token)) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+        // 1. Authorization header com Bearer
+        const authHeader = request.headers.get('authorization');
+        if (authHeader) {
+            token = authHeader.replace('Bearer ', '').replace('bearer ', '');
+        }
+
+        // 2. X-Kiwify-Token header (comum em webhooks)
+        if (!token) {
+            token = request.headers.get('x-kiwify-token');
+        }
+
+        // 3. X-Token header
+        if (!token) {
+            token = request.headers.get('x-token');
+        }
+
+        // 4. Query parameter
+        const url = new URL(request.url);
+        if (!token) {
+            token = url.searchParams.get('token');
         }
 
         const body = await request.json() as KiwifyWebhookEvent;
+
+        // 5. Token no body da requisição
+        if (!token && body) {
+            token = (body as any).token || (body as any).api_token;
+        }
+
+        console.log('Kiwify webhook auth debug:', {
+            hasAuthHeader: !!authHeader,
+            hasXKiwifyToken: !!request.headers.get('x-kiwify-token'),
+            hasXToken: !!request.headers.get('x-token'),
+            hasQueryToken: !!url.searchParams.get('token'),
+            hasBodyToken: !!(body as any).token,
+            tokenFound: !!token,
+            allHeaders: Object.fromEntries(request.headers.entries())
+        });
+
+        if (!token || !await KiwifyService.validateWebhook(token)) {
+            console.error('Kiwify webhook unauthorized - token:', token ? 'present but invalid' : 'missing');
+            return NextResponse.json(
+                { error: 'Unauthorized', debug: 'Token validation failed' },
+                { status: 401 }
+            );
+        }
 
         console.log('Received Kiwify webhook:', {
             event: body.event,

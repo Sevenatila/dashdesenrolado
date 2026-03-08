@@ -64,7 +64,14 @@
       "Bash(git commit -m \"fix: configure authentication and production environment\n\n- Added password field to User model in Prisma\n- Implemented real authentication with bcrypt\n- Fixed NextAuth to use database users\n- Added development-only access to metrics API\n- Created user atila@atila.com\n- Added missing environment variables for production\n- Fixed webhook configuration for Kiwify and Hubla\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(npx vercel ls --scope atila-gomes-pazs-projects)",
       "Bash(npx vercel env add POSTGRES_PRISMA_URL production)",
-      "Bash(git commit -m \"fix: resolve Neon-Vercel integration conflict\n\n- Changed Prisma to use POSTGRES_PRISMA_URL instead of DATABASE_URL\n- This avoids conflicts with Vercel''s Neon integration\n- The integration was overwriting DATABASE_URL with wrong values\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: resolve Neon-Vercel integration conflict\n\n- Changed Prisma to use POSTGRES_PRISMA_URL instead of DATABASE_URL\n- This avoids conflicts with Vercel''s Neon integration\n- The integration was overwriting DATABASE_URL with wrong values\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(npx vercel --prod --yes --force)",
+      "Bash(npx vercel env ls production)",
+      "Bash(npx vercel logs dashdesenrolado.vercel.app --since 2m)",
+      "Bash(curl -X GET \"http://localhost:3000/api/analytics/metrics\" --max-time 5)",
+      "Bash(node check-prod-db.js)",
+      "Bash(node import-historical-sales.js)",
+      "Bash(git commit -m \"fix: Kiwify webhook authentication - accept token in multiple formats\n\n- Now accepts token in Authorization header, X-Kiwify-Token, X-Token, query param, or body\n- Added debug logging to identify how Kiwify sends the token\n- This should fix webhook failures from Kiwify platform\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
