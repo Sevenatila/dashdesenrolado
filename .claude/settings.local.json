@@ -18,7 +18,8 @@
       "Bash(npm run build)",
       "Bash(git commit -m \"fix: TypeScript error in Hubla webhook error handling\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(vercel inspect dashdesenrolado-mcptid16w-atila-gomes-pazs-projects.vercel.app --logs)",
-      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-09&endDate=2026-03-09\")"
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-09&endDate=2026-03-09\")",
+      "Bash(git commit -m \"fix: add timeouts to VTurb API requests to prevent function timeout\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
