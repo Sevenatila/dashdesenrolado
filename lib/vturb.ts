@@ -48,17 +48,17 @@ export class VTurbClient {
             if (startDate.includes(' UTC')) {
                 startDateTime = startDate;
             } else {
-                // Converter para formato exigido: "YYYY-MM-DDTHH:MM:SS"
+                // Formato exato do suporte VTurb: "YYYY-MM-DD HH:MM:SS UTC"
                 const startDateOnly = startDate.split('T')[0]; // Remove parte de tempo se existir
-                startDateTime = startDateOnly + 'T00:00:00';
+                startDateTime = startDateOnly + ' 00:00:00 UTC';
             }
 
             if (endDate.includes(' UTC')) {
                 endDateTime = endDate;
             } else {
-                // Converter para formato exigido: "YYYY-MM-DDTHH:MM:SS"
+                // Formato exato do suporte VTurb: "YYYY-MM-DD HH:MM:SS UTC"
                 const endDateOnly = endDate.split('T')[0]; // Remove parte de tempo se existir
-                endDateTime = endDateOnly + 'T23:59:59';
+                endDateTime = endDateOnly + ' 23:59:59 UTC';
             }
 
             console.log(`[VTurb] Buscando estatísticas de sessão para player ${playerId} de ${startDateTime} a ${endDateTime}...`);
