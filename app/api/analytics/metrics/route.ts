@@ -26,9 +26,56 @@ export async function GET(request: NextRequest) {
         // Buscar dados de diferentes fontes
         const metrics: DailyAnalytics[] = [];
 
-        // 1. VTurb temporariamente desabilitado devido a timeouts
+        // 1. Buscar dados do VTurb para VSL (com timeout rápido e fallback)
         let vslMetrics: DailyAnalytics[] = [];
-        console.log('[DEBUG] VTurb temporariamente desabilitado - usando dados do banco');
+        if (process.env.VTURB_API_KEY) {
+            try {
+                console.log('[DEBUG] Tentando integração VTurb com timeout curto...');
+                const vturb = new VTurbClient(process.env.VTURB_API_KEY);
+
+                // Buscar apenas os players primeiro (timeout rápido)
+                const playersPromise = vturb.listPlayers();
+                const players = await Promise.race([
+                    playersPromise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de 5s')), 5000))
+                ]) as any[];
+
+                console.log('[DEBUG] Players encontrados:', players?.length || 0);
+
+                if (players && players.length > 0) {
+                    // Se conseguiu buscar players, continua mas só com o primeiro player para teste
+                    const testPlayer = players[0];
+                    console.log('[DEBUG] Testando com player:', testPlayer.id);
+
+                    const eventsPromise = vturb.getEventsByDay(
+                        testPlayer.id,
+                        startDate.split('T')[0],
+                        endDate.split('T')[0]
+                    );
+
+                    const events = await Promise.race([
+                        eventsPromise,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 5000))
+                    ]) as any;
+
+                    if (events && events.data) {
+                        console.log('[DEBUG] Eventos recebidos para teste');
+                        // Processar apenas um dia para teste
+                        const dateEntries = Object.entries(events.data);
+                        if (dateEntries.length > 0) {
+                            const [date, dayEvents] = dateEntries[0];
+                            const plays = (dayEvents as any).started || 0;
+                            console.log('[DEBUG] Plays encontrados:', plays);
+                        }
+                    }
+                }
+            } catch (vTurbError) {
+                console.error('[DEBUG] VTurb falhou (esperado):', vTurbError.message);
+                // Continua sem VTurb - não trava
+            }
+        } else {
+            console.log('[DEBUG] VTURB_API_KEY não encontrada');
+        }
 
         // 2. SEMPRE buscar dados do banco (independente do VTurb)
             const performances = await prisma.dailyPerformance.findMany({

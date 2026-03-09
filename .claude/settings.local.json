@@ -19,7 +19,10 @@
       "Bash(git commit -m \"fix: TypeScript error in Hubla webhook error handling\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(vercel inspect dashdesenrolado-mcptid16w-atila-gomes-pazs-projects.vercel.app --logs)",
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-09&endDate=2026-03-09\")",
-      "Bash(git commit -m \"fix: add timeouts to VTurb API requests to prevent function timeout\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: add timeouts to VTurb API requests to prevent function timeout\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"fix: temporarily disable VTurb integration to resolve dashboard timeout\n\n- Disabled VTurb API calls that were causing function timeouts\n- Dashboard will now load properly showing sales data from database\n- VTurb plays data will show as 0 temporarily until integration is fixed\n- This ensures core dashboard functionality works while we debug VTurb\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "WebFetch(domain:vturb.gitbook.io)",
+      "Bash(curl -s \"https://vturb.gitbook.io/analytics-api/pt\")"
     ],
     "deny": [],
     "ask": []
