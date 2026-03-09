@@ -19,22 +19,17 @@ import prisma from "@/lib/prisma";
 async function getMetrics(start?: string, end?: string) {
     try {
         if (start && end) {
-            // Buscar métricas da DailyPerformance
-            const metrics = await prisma.dailyPerformance.findMany({
-                where: {
-                    date: {
-                        gte: new Date(start),
-                        lte: new Date(end)
-                    }
-                }
-            });
+            // Ajustar datas para incluir o dia inteiro
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            endDate.setHours(23, 59, 59, 999);
 
-            // Buscar vendas e order bumps para cálculo total
+            // Buscar vendas e order bumps direto da tabela Sale
             const sales = await prisma.sale.findMany({
                 where: {
                     createdAt: {
-                        gte: new Date(start),
-                        lte: new Date(end)
+                        gte: startDate,
+                        lte: endDate
                     }
                 },
                 include: {
@@ -42,7 +37,7 @@ async function getMetrics(start?: string, end?: string) {
                 }
             });
 
-            if (metrics.length === 0) return null;
+            if (sales.length === 0) return null;
 
             // Calcular métricas de vendas
             const totalMainSales = sales.length;
@@ -57,7 +52,7 @@ async function getMetrics(start?: string, end?: string) {
                 return acc + sale.amount + orderBumpRevenue;
             }, 0);
 
-            // Agrega os dados do período
+            // Retornar métricas calculadas direto das vendas
             return {
                 date: end,
                 // Métricas de vendas principais
@@ -68,59 +63,67 @@ async function getMetrics(start?: string, end?: string) {
                 totalItens: totalItems,
                 receitaTotalLiquida: totalRevenue,
 
-                // Outras métricas
-                valorGasto: metrics.reduce((acc, m) => acc + m.valorGasto, 0),
-                cliquesLink: metrics.reduce((acc, m) => acc + m.cliquesLink, 0),
-                playsUnicosVSL: metrics.reduce((acc, m) => acc + m.playsUnicosVSL, 0),
-                visualizacaoPage: metrics.reduce((acc, m) => acc + m.visualizacaoPage, 0),
-                // Médias ponderadas para outras métricas seriam ideais, mas aqui fazemos médias simples ou novos cálculos
-                cpa: metrics.reduce((acc, m) => acc + m.valorGasto, 0) / (totalMainSales || 1),
+                // Outras métricas (valores default por enquanto - podem vir de APIs externas)
+                valorGasto: 0,
+                cliquesLink: 0,
+                playsUnicosVSL: 0,
+                visualizacaoPage: 0,
+                cpa: 0,
                 ticketMedio: totalMainRevenue / (totalMainSales || 1),
                 ticketMedioTotal: totalRevenue / (totalMainSales || 1),
-                conversaoVSL: Math.round(metrics.reduce((acc, m) => acc + m.conversaoVSL, 0) / metrics.length),
-                retencaoLeadVSL: Math.round(metrics.reduce((acc, m) => acc + m.retencaoLeadVSL, 0) / metrics.length),
-                engajamentoVSL: Math.round(metrics.reduce((acc, m) => acc + m.engajamentoVSL, 0) / metrics.length),
-                retencaoPitchVSL: Math.round(metrics.reduce((acc, m) => acc + m.retencaoPitchVSL, 0) / metrics.length),
-                conversaocheckout: Math.round(metrics.reduce((acc, m) => acc + m.conversaocheckout, 0) / metrics.length),
-                conversaoOrderBump: Math.round(metrics.reduce((acc, m) => acc + m.conversaoOrderBump, 0) / metrics.length),
-                conversaoBackredirect: Math.round(metrics.reduce((acc, m) => acc + m.conversaoBackredirect, 0) / metrics.length),
-                conversaoUpsell: Math.round(metrics.reduce((acc, m) => acc + m.conversaoUpsell, 0) / metrics.length),
-                conversaoDownsell: Math.round(metrics.reduce((acc, m) => acc + m.conversaoDownsell, 0) / metrics.length),
-                conversaoUpsell2: Math.round(metrics.reduce((acc, m) => acc + m.conversaoUpsell2, 0) / metrics.length),
+                conversaoVSL: 0,
+                retencaoLeadVSL: 0,
+                engajamentoVSL: 0,
+                retencaoPitchVSL: 0,
+                conversaocheckout: 0,
+                conversaoOrderBump: 0,
+                conversaoBackredirect: 0,
+                conversaoUpsell: 0,
+                conversaoDownsell: 0,
+                conversaoUpsell2: 0,
             };
         }
 
-        const latest = await prisma.dailyPerformance.findFirst({
-            orderBy: { date: 'desc' }
+        // Sem filtro de data - mostrar todas as vendas
+        const sales = await prisma.sale.findMany({
+            include: {
+                items: true
+            },
+            orderBy: { createdAt: 'desc' }
         });
 
-        if (latest) {
-            // Para métricas sem filtro, também buscar dados das vendas
-            const sales = await prisma.sale.findMany({
-                include: {
-                    items: true
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 100 // Últimas 100 vendas para cálculo
-            });
+        const totalMainSales = sales.length;
+        const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
+        const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
+        const totalRevenue = sales.reduce((acc, sale) => {
+            const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
+            return acc + sale.amount + orderBumpRevenue;
+        }, 0);
 
-            const totalMainSales = sales.length;
-            const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
-            const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
-            const totalRevenue = sales.reduce((acc, sale) => {
-                const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
-                return acc + sale.amount + orderBumpRevenue;
-            }, 0);
-
-            return {
-                ...latest,
-                totalItens: totalItems,
-                receitaTotalLiquida: totalRevenue,
-                ticketMedioTotal: totalRevenue / (totalMainSales || 1)
-            };
-        }
-
-        return latest;
+        return {
+            date: new Date().toISOString(),
+            vendas: totalMainSales,
+            receitaGerada: totalMainRevenue,
+            totalItens: totalItems,
+            receitaTotalLiquida: totalRevenue,
+            valorGasto: 0,
+            cliquesLink: 0,
+            playsUnicosVSL: 0,
+            visualizacaoPage: 0,
+            cpa: 0,
+            ticketMedio: totalMainRevenue / (totalMainSales || 1),
+            ticketMedioTotal: totalRevenue / (totalMainSales || 1),
+            conversaoVSL: 0,
+            retencaoLeadVSL: 0,
+            engajamentoVSL: 0,
+            retencaoPitchVSL: 0,
+            conversaocheckout: 0,
+            conversaoOrderBump: 0,
+            conversaoBackredirect: 0,
+            conversaoUpsell: 0,
+            conversaoDownsell: 0,
+            conversaoUpsell2: 0,
+        };
     } catch (error) {
         console.error("Error fetching metrics:", error);
         return null;

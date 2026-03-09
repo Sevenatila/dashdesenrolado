@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node test-dashboard-metrics.js)",
-      "Bash(node check-sales.js)"
+      "Bash(node sync-dashboard.js)"
     ],
     "deny": [],
     "ask": []
