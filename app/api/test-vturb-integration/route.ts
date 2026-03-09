@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
             data: {
                 players: {
                     count: players.length,
-                    list: players.map(p => ({
+                    list: players.map((p: any) => ({
                         id: p.id,
                         name: p.name,
                         created: p.created_at
