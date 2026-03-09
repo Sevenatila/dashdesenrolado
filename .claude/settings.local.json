@@ -37,7 +37,8 @@
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-integration\")",
       "Bash(python -m json.tool)",
       "Bash(vercel list --count 3)",
-      "Bash(git commit -m \"fix: TypeScript error in test-vturb-integration endpoint\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: TypeScript error in test-vturb-integration endpoint\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"feat: adicionar endpoint detalhado de teste VTurb\n\n- Testa múltiplos períodos de data\n- Verifica eventos de diferentes players\n- Faz requisição direta à API\n- Retorna informações detalhadas para debug\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
