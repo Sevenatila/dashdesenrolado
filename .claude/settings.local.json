@@ -44,7 +44,8 @@
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-specific\")",
       "Bash(git commit -m \"test: adicionar teste com endpoint /sessions/stats sugerido pelo VTurb\n\n- Endpoint: POST /sessions/stats\n- Inclui parâmetros video_duration e pitch_time\n- Testa diferentes configurações e períodos\n- Implementa exatamente como sugerido pelo suporte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-sessions\")",
-      "Bash(git commit -m \"fix: TypeScript error in test-vturb-detailed endpoint\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: TypeScript error in test-vturb-detailed endpoint\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"fix: corrigir formato de data para API VTurb sessions/stats\n\n- Atualizado formato de data para incluir horas (YYYY-MM-DDTHH:MM:SS)\n- Criado novo método getSessionStats usando endpoint correto\n- Mantido getEventsByDay para compatibilidade\n- Corrigido todos os testes para usar datetime completo\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

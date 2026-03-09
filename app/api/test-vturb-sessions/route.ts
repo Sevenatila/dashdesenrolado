@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
             const dataInicio = new Date(hoje);
             dataInicio.setDate(dataInicio.getDate() - periodo.dias);
 
-            const startDate = dataInicio.toISOString().split('T')[0];
-            const endDate = hoje.toISOString().split('T')[0];
+            const startDate = dataInicio.toISOString().split('T')[0] + 'T00:00:00';
+            const endDate = hoje.toISOString().split('T')[0] + 'T23:59:59';
 
             for (const config of configuracoes) {
                 console.log(`[VTurb Sessions] Testando: ${periodo.nome} com ${config.descricao}`);
@@ -118,8 +118,8 @@ export async function GET(request: NextRequest) {
             },
             body: JSON.stringify({
                 player_id: targetPlayerId,
-                start_date: "2026-03-01",
-                end_date: "2026-03-09",
+                start_date: "2026-03-01T00:00:00",
+                end_date: "2026-03-09T23:59:59",
                 timezone: "America/Sao_Paulo",
                 video_duration: 3600,
                 pitch_time: 30
@@ -155,8 +155,8 @@ export async function GET(request: NextRequest) {
                 descricao: "Teste com parâmetros exatos sugeridos pelo suporte VTurb",
                 parametros: {
                     player_id: targetPlayerId,
-                    start_date: "2026-03-01",
-                    end_date: "2026-03-09",
+                    start_date: "2026-03-01T00:00:00",
+                    end_date: "2026-03-09T23:59:59",
                     timezone: "America/Sao_Paulo",
                     video_duration: 3600,
                     pitch_time: 30
