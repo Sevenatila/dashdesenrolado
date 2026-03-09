@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import {
     DollarSign,
     TrendingUp,
@@ -14,188 +17,139 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import SyncButton from "@/components/dashboard/SyncButton";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
 import PlayerSelector from "@/components/dashboard/PlayerSelector";
-import prisma from "@/lib/prisma";
+import { DailyAnalytics } from "@/types/analytics";
 
-async function getTaxSettings() {
-    try {
-        const settings = await prisma.settings.findMany({
-            where: {
-                key: {
-                    in: ['tax_pix_percent', 'tax_card_percent']
-                }
-            }
-        });
-
-        const settingsMap = {
-            tax_pix_percent: '0',
-            tax_card_percent: '0',
-        };
-
-        settings.forEach(setting => {
-            settingsMap[setting.key as keyof typeof settingsMap] = setting.value;
-        });
-
-        return {
-            pixTax: parseFloat(settingsMap.tax_pix_percent),
-            cardTax: parseFloat(settingsMap.tax_card_percent)
-        };
-    } catch (error) {
-        console.error('Error fetching tax settings:', error);
-        return { pixTax: 0, cardTax: 0 };
-    }
+interface DashboardMetrics {
+    vendas: number;
+    receitaGerada: number;
+    totalItens: number;
+    receitaTotalLiquida: number;
+    valorGasto: number;
+    cliquesLink: number;
+    playsUnicosVSL: number;
+    visualizacaoPage: number;
+    cpa: number;
+    ticketMedio: number;
+    ticketMedioTotal: number;
+    conversaoVSL: number;
+    retencaoLeadVSL: number;
+    engajamentoVSL: number;
+    retencaoPitchVSL: number;
+    conversaocheckout: number;
+    conversaoOrderBump: number;
+    conversaoBackredirect: number;
+    conversaoUpsell: number;
+    conversaoDownsell: number;
+    conversaoUpsell2: number;
 }
 
-async function getMetrics(start?: string, end?: string) {
-    try {
-        if (start && end) {
-            // Ajustar datas para incluir o dia inteiro em UTC
-            const startDate = new Date(start + 'T00:00:00.000Z');
-            const endDate = new Date(end + 'T23:59:59.999Z');
+interface TaxSettings {
+    pixTax: number;
+    cardTax: number;
+}
 
-            // Buscar vendas e order bumps direto da tabela Sale
-            const sales = await prisma.sale.findMany({
-                where: {
-                    createdAt: {
-                        gte: startDate,
-                        lte: endDate
-                    }
-                },
-                include: {
-                    items: true // Incluir order bumps/upsells
-                }
+export default function DashboardPage() {
+    const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+    const [taxSettings, setTaxSettings] = useState<TaxSettings>({ pixTax: 0, cardTax: 0 });
+    const [isLoading, setIsLoading] = useState(true);
+    const [dateRange, setDateRange] = useState({
+        start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+    });
+
+    // Buscar dados da API analytics que já tem integração VTurb
+    const fetchMetrics = async () => {
+        try {
+            setIsLoading(true);
+
+            const params = new URLSearchParams({
+                startDate: dateRange.start + 'T00:00:00.000Z',
+                endDate: dateRange.end + 'T23:59:59.999Z'
             });
 
-            if (sales.length === 0) return null;
+            const response = await fetch(`/api/analytics/metrics?${params}`);
 
-            // Calcular métricas de vendas
-            const totalMainSales = sales.length;
-            const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
+            if (response.ok) {
+                const result = await response.json();
+                const analyticsData: DailyAnalytics[] = result.data || [];
 
-            // Calcular total de itens (vendas + order bumps)
-            const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
+                // Agregar dados do analytics para o dashboard
+                const aggregatedMetrics = analyticsData.reduce((acc, item) => {
+                    return {
+                        vendas: acc.vendas + item.vendas,
+                        receitaGerada: acc.receitaGerada + (item.vendas * item.aov),
+                        totalItens: acc.totalItens + item.vendas,
+                        receitaTotalLiquida: acc.receitaTotalLiquida + (item.vendas * item.aov),
+                        valorGasto: acc.valorGasto + item.valorGasto,
+                        cliquesLink: acc.cliquesLink + item.cliques,
+                        playsUnicosVSL: acc.playsUnicosVSL + item.visuUnicaVSL,
+                        visualizacaoPage: acc.visualizacaoPage + item.visitas,
+                        cpa: item.vendas > 0 && item.valorGasto > 0 ? item.valorGasto / item.vendas : 0,
+                        ticketMedio: item.aov,
+                        ticketMedioTotal: item.aov,
+                        conversaoVSL: item.visuUnicaVSL > 0 ? (item.vendas / item.visuUnicaVSL) * 100 : 0,
+                        retencaoLeadVSL: item.passagem,
+                        engajamentoVSL: item.connectRate,
+                        retencaoPitchVSL: item.passagem,
+                        conversaocheckout: item.convCheckout,
+                        conversaoOrderBump: item.convOB1,
+                        conversaoBackredirect: 0,
+                        conversaoUpsell: item.convUpsell1,
+                        conversaoDownsell: item.downsell > 0 ? 10 : 0, // placeholder
+                        conversaoUpsell2: item.convUpsell2,
+                    };
+                }, {
+                    vendas: 0, receitaGerada: 0, totalItens: 0, receitaTotalLiquida: 0,
+                    valorGasto: 0, cliquesLink: 0, playsUnicosVSL: 0, visualizacaoPage: 0,
+                    cpa: 0, ticketMedio: 0, ticketMedioTotal: 0, conversaoVSL: 0,
+                    retencaoLeadVSL: 0, engajamentoVSL: 0, retencaoPitchVSL: 0,
+                    conversaocheckout: 0, conversaoOrderBump: 0, conversaoBackredirect: 0,
+                    conversaoUpsell: 0, conversaoDownsell: 0, conversaoUpsell2: 0
+                });
 
-            // Calcular receita total (principal + order bumps)
-            const totalRevenue = sales.reduce((acc, sale) => {
-                const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
-                return acc + sale.amount + orderBumpRevenue;
-            }, 0);
-
-            // Retornar métricas calculadas direto das vendas
-            return {
-                date: end,
-                // Métricas de vendas principais
-                vendas: totalMainSales,
-                receitaGerada: totalMainRevenue,
-
-                // Métricas totais (principal + order bumps)
-                totalItens: totalItems,
-                receitaTotalLiquida: totalRevenue,
-
-                // Outras métricas (valores default por enquanto - podem vir de APIs externas)
-                valorGasto: 0,
-                cliquesLink: 0,
-                playsUnicosVSL: 0,
-                visualizacaoPage: 0,
-                cpa: 0,
-                ticketMedio: totalMainRevenue / (totalMainSales || 1),
-                ticketMedioTotal: totalRevenue / (totalMainSales || 1),
-                conversaoVSL: 0,
-                retencaoLeadVSL: 0,
-                engajamentoVSL: 0,
-                retencaoPitchVSL: 0,
-                conversaocheckout: 0,
-                conversaoOrderBump: 0,
-                conversaoBackredirect: 0,
-                conversaoUpsell: 0,
-                conversaoDownsell: 0,
-                conversaoUpsell2: 0,
-            };
+                setMetrics(aggregatedMetrics);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar métricas:', error);
+        } finally {
+            setIsLoading(false);
         }
+    };
 
-        // Sem filtro de data - mostrar todas as vendas
-        const sales = await prisma.sale.findMany({
-            include: {
-                items: true
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+    // Buscar configurações de taxa
+    const fetchTaxSettings = async () => {
+        try {
+            // Por enquanto usar valores default, depois implementar API para settings
+            setTaxSettings({ pixTax: 0, cardTax: 0 });
+        } catch (error) {
+            console.error('Erro ao buscar configurações:', error);
+            setTaxSettings({ pixTax: 0, cardTax: 0 });
+        }
+    };
 
-        const totalMainSales = sales.length;
-        const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
-        const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
-        const totalRevenue = sales.reduce((acc, sale) => {
-            const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
-            return acc + sale.amount + orderBumpRevenue;
-        }, 0);
+    useEffect(() => {
+        fetchMetrics();
+        fetchTaxSettings();
+    }, [dateRange]);
 
-        return {
-            date: new Date().toISOString(),
-            vendas: totalMainSales,
-            receitaGerada: totalMainRevenue,
-            totalItens: totalItems,
-            receitaTotalLiquida: totalRevenue,
-            valorGasto: 0,
-            cliquesLink: 0,
-            playsUnicosVSL: 0,
-            visualizacaoPage: 0,
-            cpa: 0,
-            ticketMedio: totalMainRevenue / (totalMainSales || 1),
-            ticketMedioTotal: totalRevenue / (totalMainSales || 1),
-            conversaoVSL: 0,
-            retencaoLeadVSL: 0,
-            engajamentoVSL: 0,
-            retencaoPitchVSL: 0,
-            conversaocheckout: 0,
-            conversaoOrderBump: 0,
-            conversaoBackredirect: 0,
-            conversaoUpsell: 0,
-            conversaoDownsell: 0,
-            conversaoUpsell2: 0,
-        };
-    } catch (error) {
-        console.error("Error fetching metrics:", error);
-        return null;
-    }
-}
-
-export default async function DashboardPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ start?: string; end?: string }>;
-}) {
-    const { start, end } = await searchParams;
-    const metrics = await getMetrics(start, end);
-    const taxSettings = await getTaxSettings();
+    useEffect(() => {
+        fetchMetrics();
+    }, []);
 
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-    // Calcular valores líquidos com base nas taxas configuradas
-    const calculateNetValues = () => {
-        if (!metrics) return { netRevenue: 0, netTotalRevenue: 0 };
-
-        // Para demonstração, assumimos que 60% são PIX e 40% cartão
-        // Em implementação real, buscaríamos o método de pagamento de cada venda
-        const pixPercentage = 0.6;
-        const cardPercentage = 0.4;
-
-        // Receita principal líquida
-        const pixRevenue = (metrics.receitaGerada * pixPercentage);
-        const cardRevenue = (metrics.receitaGerada * cardPercentage);
-        const netRevenue = (pixRevenue * (1 - taxSettings.pixTax / 100)) +
-                          (cardRevenue * (1 - taxSettings.cardTax / 100));
-
-        // Receita total líquida (principal + order bumps)
-        const totalPixRevenue = ((metrics.receitaTotalLiquida || metrics.receitaGerada) * pixPercentage);
-        const totalCardRevenue = ((metrics.receitaTotalLiquida || metrics.receitaGerada) * cardPercentage);
-        const netTotalRevenue = (totalPixRevenue * (1 - taxSettings.pixTax / 100)) +
-                               (totalCardRevenue * (1 - taxSettings.cardTax / 100));
-
-        return { netRevenue, netTotalRevenue };
-    };
-
-    const { netRevenue, netTotalRevenue } = calculateNetValues();
     const hasTaxes = taxSettings.pixTax > 0 || taxSettings.cardTax > 0;
+
+    if (isLoading) {
+        return (
+            <div className="space-y-8 pb-12">
+                <div className="flex justify-center items-center h-96">
+                    <div className="text-gray-500">Carregando dados do VTurb...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 pb-12">
@@ -204,7 +158,7 @@ export default async function DashboardPage({
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
                         <p className="text-sm text-gray-500">
-                            Período: {start ? `${new Date(start).toLocaleDateString('pt-BR')} até ${new Date(end!).toLocaleDateString('pt-BR')}` : 'Últimos dados disponíveis'}
+                            Período: {dateRange.start} até {dateRange.end} (com dados VTurb)
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
@@ -242,25 +196,33 @@ export default async function DashboardPage({
                     />
                 </div>
 
-                {/* Valores Líquidos - só mostrar se há taxas configuradas */}
-                {hasTaxes && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div></div> {/* Espaço vazio */}
-                        <MetricCard
-                            title="Receita Líquida Principal"
-                            value={formatCurrency(netRevenue)}
-                            icon={DollarSign}
-                            description={`Após taxas PIX (${taxSettings.pixTax}%) e Cartão (${taxSettings.cardTax}%)`}
-                        />
-                        <div></div> {/* Espaço vazio */}
-                        <MetricCard
-                            title="Receita Total Líquida"
-                            value={formatCurrency(netTotalRevenue)}
-                            icon={DollarSign}
-                            description={`Após taxas PIX (${taxSettings.pixTax}%) e Cartão (${taxSettings.cardTax}%)`}
-                        />
-                    </div>
-                )}
+                {/* Métricas VTurb em destaque */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <MetricCard
+                        title="Visualizações (VTurb)"
+                        value={metrics?.visualizacaoPage.toString() || "0"}
+                        icon={Users}
+                        description="Total de views da VSL"
+                    />
+                    <MetricCard
+                        title="Plays Únicos VSL"
+                        value={metrics?.playsUnicosVSL.toString() || "0"}
+                        icon={MonitorPlay}
+                        description="Plays iniciados (VTurb)"
+                    />
+                    <MetricCard
+                        title="Connect Rate"
+                        value={`${metrics?.engajamentoVSL.toFixed(1) || 0}%`}
+                        icon={Target}
+                        description="Plays / Views"
+                    />
+                    <MetricCard
+                        title="Retenção VSL"
+                        value={`${metrics?.retencaoLeadVSL.toFixed(1) || 0}%`}
+                        icon={Percent}
+                        description="Taxa de finalização"
+                    />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {/* Métricas Complementares */}
