@@ -42,7 +42,9 @@
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-detailed\")",
       "Bash(git commit -m \"test: adicionar endpoint específico para testar player VTurb com dados\n\n- Testa player MINI_VSL_REEDICAO_QUIZ_CDR_97_86b842mnp_HUBLA\n- Verifica múltiplos períodos de data\n- Testa diferentes formatos de requisição\n- Debug detalhado da resposta da API\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-specific\")",
-      "Bash(git commit -m \"test: adicionar teste com endpoint /sessions/stats sugerido pelo VTurb\n\n- Endpoint: POST /sessions/stats\n- Inclui parâmetros video_duration e pitch_time\n- Testa diferentes configurações e períodos\n- Implementa exatamente como sugerido pelo suporte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"test: adicionar teste com endpoint /sessions/stats sugerido pelo VTurb\n\n- Endpoint: POST /sessions/stats\n- Inclui parâmetros video_duration e pitch_time\n- Testa diferentes configurações e períodos\n- Implementa exatamente como sugerido pelo suporte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-sessions\")",
+      "Bash(git commit -m \"fix: TypeScript error in test-vturb-detailed endpoint\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

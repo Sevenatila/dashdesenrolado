@@ -128,6 +128,10 @@ export async function GET(request: NextRequest) {
 
         // 3. Testar também com diferentes formatos de requisição
         const testPlayer = players[0];
+        const hoje = new Date();
+        const mesPassado = new Date(hoje);
+        mesPassado.setMonth(mesPassado.getMonth() - 1);
+
         const directTest = await fetch(`https://analytics.vturb.net/events/total_by_company`, {
             method: 'POST',
             headers: {
