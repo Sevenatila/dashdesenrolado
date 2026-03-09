@@ -43,8 +43,11 @@ export async function GET(request: NextRequest) {
                 console.log('[VTurb] Players encontrados:', players?.length || 0);
 
                 if (players && players.length > 0) {
-                    // Processar eventos de todos os players
-                    for (const player of players) {
+                    // Processar apenas os primeiros 5 players para evitar timeout
+                    console.log(`[VTurb] Processando apenas os primeiros 5 players de ${players.length} disponíveis para evitar timeout`);
+                    const playersToProcess = players.slice(0, 5);
+
+                    for (const player of playersToProcess) {
                         console.log(`[VTurb] Buscando eventos do player: ${player.id} - ${player.name}`);
 
                         try {
