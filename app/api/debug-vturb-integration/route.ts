@@ -49,12 +49,12 @@ export async function GET(request: NextRequest) {
 
                         logs.push(`[DEBUG] Resposta recebida: ${JSON.stringify(sessionStats).substring(0, 200)}`);
 
-                        if (sessionStats && sessionStats.data) {
-                            const totalViews = sessionStats.data.total_viewed || 0;
-                            const totalStarts = sessionStats.data.total_started || 0;
-                            const totalFinished = sessionStats.data.total_finished || 0;
-                            const conversions = sessionStats.data.total_conversions || 0;
-                            const totalRevenue = sessionStats.data.total_amount_brl || 0;
+                        if (sessionStats && sessionStats.total_viewed !== undefined) {
+                            const totalViews = sessionStats.total_viewed || 0;
+                            const totalStarts = sessionStats.total_started || 0;
+                            const totalFinished = sessionStats.total_finished || 0;
+                            const conversions = sessionStats.total_conversions || 0;
+                            const totalRevenue = sessionStats.total_amount_brl || 0;
 
                             logs.push(`[DEBUG] Dados processados: Views=${totalViews}, Starts=${totalStarts}, Finished=${totalFinished}, Conv=${conversions}, Rev=R$${totalRevenue}`);
 
