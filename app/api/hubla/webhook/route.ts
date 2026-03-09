@@ -80,10 +80,7 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
             }
           } else {
             console.error(`Main sale not found for order bump - customer: ${email}`);
-            return NextResponse.json(
-              { error: 'Main sale not found for order bump' },
-              { status: 400 }
-            );
+            throw new Error('Main sale not found for order bump');
           }
           return;
         }

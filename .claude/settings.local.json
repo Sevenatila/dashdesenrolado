@@ -7,7 +7,15 @@
       "Bash(git add app/api/test-vturb/route.ts)",
       "Bash(git commit -m \"feat: add VTurb test API to diagnose integration issues\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb\")",
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit -m \"debug: add temporary VTurb integration logs to diagnose issue\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(vercel --version)",
+      "Bash(vercel logs --app=dashdesenrolado --since=10m)",
+      "Bash(vercel logs --since=10m)",
+      "Bash(vercel list)",
+      "Bash(vercel logs https://dashdesenrolado-1jc2rmb2u-atila-gomes-pazs-projects.vercel.app)",
+      "Bash(vercel --prod)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []
