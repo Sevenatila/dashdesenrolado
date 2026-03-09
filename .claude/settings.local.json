@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/test-metrics\" --max-time 10)",
-      "Bash(curl -X GET \"https://dashdesenrolado.vercel.app/api/analytics/metrics\" --max-time 10)",
-      "Bash(git commit -m \"fix: remove authentication requirement from analytics API\n\n- Analytics page now works without login (same as dashboard)\n- Removed authentication check from /api/analytics/metrics\n- Both dashboard and analytics now show the same data\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(dir /s)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"feat: add support for order bumps and upsells\n\n- Added totalAmount, customerName, productName columns to Sale table\n- Created SaleItem table for order bumps and upsells tracking\n- Database migration completed successfully\n- Ready to update webhook logic\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
