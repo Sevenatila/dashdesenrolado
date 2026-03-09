@@ -19,10 +19,9 @@ import prisma from "@/lib/prisma";
 async function getMetrics(start?: string, end?: string) {
     try {
         if (start && end) {
-            // Ajustar datas para incluir o dia inteiro
-            const startDate = new Date(start);
-            const endDate = new Date(end);
-            endDate.setHours(23, 59, 59, 999);
+            // Ajustar datas para incluir o dia inteiro em UTC
+            const startDate = new Date(start + 'T00:00:00.000Z');
+            const endDate = new Date(end + 'T23:59:59.999Z');
 
             // Buscar vendas e order bumps direto da tabela Sale
             const sales = await prisma.sale.findMany({
