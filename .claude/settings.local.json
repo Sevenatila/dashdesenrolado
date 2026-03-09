@@ -1,12 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node sync-dashboard.js)",
-      "Bash(git commit -m \"fix: dashboard now pulls data directly from Sales table instead of DailyPerformance\n\n- Removed dependency on DailyPerformance table\n- Dashboard now shows real-time sales data directly from Sale table\n- Fixed date filtering to include entire day (00:00 to 23:59)\n- All metrics now calculated from actual sales data\n- No more sync issues between tables\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(node check-values.js)",
-      "Bash(node test-filter.js)",
-      "Bash(git commit -m \"fix: correct date filter timezone issue in dashboard\n\n- Fixed UTC date filtering that was using local timezone\n- Now correctly filters dates from 00:00:00 to 23:59:59 UTC\n- Dashboard now shows correct values: 29 vendas, R$ 3.845,64 for 09/03/2026\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(node compare-hubla.js)"
+      "Bash(git add .)"
     ],
     "deny": [],
     "ask": []

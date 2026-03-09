@@ -9,7 +9,6 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
     const eventType = webhookData.type;
     const eventData = webhookData.event;
 
-    console.log('Processing Hubla v2 event:', eventType);
 
     switch (eventType) {
       case 'invoice.paid':
@@ -36,20 +35,22 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
           fullName = userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : '';
         }
 
-        console.log('Processed webhook data:', { invoiceId, amount, email, fullName, eventType });
 
-        // Identificar se é order bump/upsell
-        const isOrderBump = invoiceId && (invoiceId.includes('-offer-') || invoiceId.includes('-upsell-') || invoiceId.includes('-downsell-'));
+        // Identificar se é order bump/upsell pela ausência de groupName ou groupName vazio
+        const isOrderBump = eventType === 'NewSale' &&
+                           (!eventData.groupName || eventData.groupName.trim() === '');
 
         if (isOrderBump) {
-          console.log('📦 Processing order bump/upsell:', invoiceId);
 
-          // Extrair ID da venda principal (remove sufixo -offer-X, -upsell-X, etc)
-          const mainSaleId = invoiceId.replace(/-(?:offer|upsell|downsell)-\d+$/, '');
-
-          // Buscar venda principal
+          // Buscar venda principal pelo mesmo usuário mais recente (que tenha groupName preenchido)
           const mainSale = await prisma.sale.findFirst({
-            where: { externalId: mainSaleId }
+            where: {
+              platform: 'HUBLA',
+              customerEmail: email,
+              // Buscar apenas vendas principais (que não são order bumps)
+              customerName: { not: null }
+            },
+            orderBy: { createdAt: 'desc' }
           });
 
           if (mainSale) {
@@ -68,8 +69,7 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
                   saleId: mainSale.id,
                   externalId: invoiceId,
                   amount: amount,
-                  type: invoiceId.includes('-offer-') ? 'ORDER_BUMP' :
-                        invoiceId.includes('-upsell-') ? 'UPSELL' : 'DOWNSELL',
+                  type: 'ORDER_BUMP',
                   productName: eventType === 'NewSale' ? 'Order Bump' : 'Order Bump',
                   createdAt: eventType === 'NewSale'
                     ? (eventData.createdAt ? new Date(eventData.createdAt) : new Date())
@@ -77,26 +77,24 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
                 }
               });
 
-              console.log(`✅ Order bump saved: ${invoiceId} - R$ ${amount}`);
             }
           } else {
-            console.log(`⚠️ Main sale not found for order bump: ${mainSaleId}`);
+            console.error(`Main sale not found for order bump - customer: ${email}`);
+            return NextResponse.json(
+              { error: 'Main sale not found for order bump' },
+              { status: 400 }
+            );
           }
           return;
         }
 
         if (invoiceId && amount) {
-          console.log('Attempting to save sale to database...');
-
           // Verificar se já existe
           const existing = await prisma.sale.findFirst({
             where: { externalId: invoiceId }
           });
 
-          console.log('Existing sale check:', existing ? 'Found existing' : 'No existing sale');
-
           if (!existing) {
-            console.log('Creating new sale record...');
             await prisma.sale.create({
               data: {
                 platform: 'HUBLA',
@@ -125,7 +123,6 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
               }
             });
 
-            console.log(`✅ Hubla v2 sale saved: ${invoiceId} - R$ ${amount} - ${email}`);
 
             // Atualizar métricas diárias
             const date = eventType === 'NewSale'
@@ -152,16 +149,14 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
 
       case 'lead.abandoned_checkout':
         // Lead abandonou carrinho - apenas logar por enquanto
-        console.log('Lead abandoned checkout:', eventData.lead?.email);
         break;
 
       case 'subscription.created':
       case 'subscription.cancelled':
-        console.log('Subscription event:', eventType, eventData.lead?.email);
         break;
 
       default:
-        console.log('Unhandled Hubla v2 event type:', eventType);
+        break;
     }
   } catch (error) {
     console.error('Error processing Hubla v2 event:', error);
@@ -183,7 +178,6 @@ export async function POST(request: NextRequest) {
                     request.headers.get('x-real-ip') ||
                     'unknown';
 
-    console.log('Webhook received from IP:', clientIP);
 
     // Ler o corpo da requisição
     const body = await request.text();
@@ -199,23 +193,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log dos dados recebidos para debug
-    console.log('Hubla webhook structure:', {
-      hasEvent: !!webhookData.event,
-      hasData: !!webhookData.data,
-      hasType: !!(webhookData as any).type,
-      hasVersion: !!(webhookData as any).version,
-      type: (webhookData as any).type,
-      keys: Object.keys(webhookData)
-    });
-
-    // Log formato para debug
-    if ((webhookData as any).type && webhookData.event) {
-      console.log('Detected Hubla v2 webhook format:', (webhookData as any).type);
-    }
-
-    // Log detalhado para debug
-    console.log('Full webhook payload:', JSON.stringify(webhookData, null, 2));
 
     // Verificar se tem os campos obrigatórios
     if (!webhookData.event && !(webhookData as any).type) {
@@ -229,7 +206,6 @@ export async function POST(request: NextRequest) {
     // Verificar header de idempotência
     const idempotencyKey = request.headers.get('x-hubla-idempotency');
     if (idempotencyKey && idempotencyKey === webhookData.idempotency_key) {
-      console.log('Duplicate webhook event detected:', idempotencyKey);
       return NextResponse.json({ status: 'already_processed' });
     }
 
@@ -241,16 +217,7 @@ export async function POST(request: NextRequest) {
       // Formato legacy da Hubla
       const hublaService = HublaService.getInstance();
       await hublaService.processWebhookEvent(webhookData);
-    } else {
-      console.warn('Unknown webhook format:', Object.keys(webhookData));
     }
-
-    // Log do evento processado
-    console.log('Hubla webhook processed successfully:', {
-      event: webhookData.event,
-      id: webhookData.id,
-      timestamp: new Date().toISOString()
-    });
 
     // Retornar resposta de sucesso rapidamente
     return NextResponse.json({

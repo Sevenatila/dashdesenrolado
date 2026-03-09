@@ -20,11 +20,9 @@ export async function GET(req: Request) {
         const syncService = new SyncService();
 
         if (start && end) {
-            console.log(`Manual Range Sync requested: ${start} to ${end}, player: ${playerId || 'all'}`);
             await syncService.syncRange(start, end, playerId);
         } else {
             const dateStr = date || start || new Date().toISOString().split('T')[0];
-            console.log(`Manual Day Sync requested for date: ${dateStr}, player: ${playerId || 'all'}`);
             await syncService.syncDay(dateStr, playerId);
         }
 

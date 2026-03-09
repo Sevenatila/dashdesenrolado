@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
         const startDate = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const endDate = searchParams.get('endDate') || new Date().toISOString();
 
-        console.log('Fetching metrics for:', { vslId, platform, startDate, endDate });
 
         // CÓDIGO REAL - BUSCAR DADOS REAIS
         // Buscar dados de diferentes fontes
@@ -138,12 +137,11 @@ export async function GET(request: NextRequest) {
                 }
             }
             } catch (vTurbError) {
-                console.warn('VTurb API failed, continuing without VSL data:', vTurbError);
+                // VTurb API failed, continuing without VSL data
             }
         }
 
         // 2. SEMPRE buscar dados do banco (independente do VTurb)
-        console.log('Fetching sales data from database...');
             const performances = await prisma.dailyPerformance.findMany({
                 where: {
                     date: {
@@ -224,7 +222,6 @@ export async function GET(request: NextRequest) {
         // 3. Combinar dados do VTurb e banco
         const allMetrics = [...vslMetrics, ...metrics];
 
-        console.log(`Combined metrics: ${vslMetrics.length} from VTurb + ${metrics.length} from DB = ${allMetrics.length} total`);
 
         // Ordenar por data
         allMetrics.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -236,7 +233,6 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error("Analytics Metrics API Error:", error);
         return NextResponse.json(
             { error: "Erro ao buscar métricas", details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
