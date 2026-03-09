@@ -41,9 +41,25 @@ export class VTurbClient {
     // Busca estatísticas de sessões para um player (endpoint atualizado pelo suporte VTurb)
     async getSessionStats(playerId: string, startDate: string, endDate: string, videoDuration: number = 600, pitchTime: number = 300) {
         try {
-            // Garantir que as datas têm formato datetime completo
-            const startDateTime = startDate.includes('T') ? startDate : startDate + 'T00:00:00';
-            const endDateTime = endDate.includes('T') ? endDate : endDate + 'T23:59:59';
+            // Formato correto descoberto: "YYYY-MM-DD HH:MM:SS UTC"
+            let startDateTime: string;
+            let endDateTime: string;
+
+            if (startDate.includes(' UTC')) {
+                startDateTime = startDate;
+            } else {
+                // Converter YYYY-MM-DD para "YYYY-MM-DD 00:00:00 UTC"
+                const startDateOnly = startDate.split('T')[0]; // Remove parte de tempo se existir
+                startDateTime = startDateOnly + ' 00:00:00 UTC';
+            }
+
+            if (endDate.includes(' UTC')) {
+                endDateTime = endDate;
+            } else {
+                // Converter YYYY-MM-DD para "YYYY-MM-DD 23:59:59 UTC"
+                const endDateOnly = endDate.split('T')[0]; // Remove parte de tempo se existir
+                endDateTime = endDateOnly + ' 23:59:59 UTC';
+            }
 
             console.log(`[VTurb] Buscando estatísticas de sessão para player ${playerId} de ${startDateTime} a ${endDateTime}...`);
             const response = await fetch(`${this.baseUrl}/sessions/stats`, {

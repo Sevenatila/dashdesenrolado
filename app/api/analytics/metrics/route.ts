@@ -48,71 +48,75 @@ export async function GET(request: NextRequest) {
                         console.log(`[VTurb] Buscando eventos do player: ${player.id} - ${player.name}`);
 
                         try {
-                            const eventsPromise = vturb.getEventsByDay(
+                            const eventsPromise = vturb.getSessionStats(
                                 player.id,
                                 startDate.split('T')[0],
                                 endDate.split('T')[0]
                             );
 
-                            const events = await Promise.race([
+                            const sessionStats = await Promise.race([
                                 eventsPromise,
                                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 30000))
                             ]) as any;
 
-                            if (events && events.data) {
-                                console.log(`[VTurb] Processando eventos do player ${player.name}`);
+                            if (sessionStats && sessionStats.data && sessionStats.data.events) {
+                                console.log(`[VTurb] Processando estatísticas de sessão do player ${player.name}`);
 
-                                // Processar eventos por dia
-                                for (const [date, dayEvents] of Object.entries(events.data)) {
-                                    const plays = (dayEvents as any).started || 0;
-                                    const views = (dayEvents as any).viewed || 0;
-                                    const finished = (dayEvents as any).finished || 0;
+                                // A API /sessions/stats retorna dados agregados
+                                const totalViews = sessionStats.data.events.viewed || 0;
+                                const totalStarts = sessionStats.data.events.started || 0;
+                                const totalFinished = sessionStats.data.events.finished || 0;
+                                const conversions = sessionStats.data.conversions || 0;
+                                const totalRevenue = sessionStats.data.total_revenue || 0;
 
-                                    // Criar métrica para este dia e player
-                                    const vturbMetric: DailyAnalytics = {
-                                        date: new Date(date + 'T00:00:00'),
-                                        vslId: player.id,
-                                        vslName: player.name || 'VSL VTurb',
-                                        platform: 'vturb',
+                                // Criar uma métrica única para todo o período
+                                const dateRange = `${startDate.split('T')[0]} a ${endDate.split('T')[0]}`;
 
-                                        // Métricas de Tráfego (Meta Ads será integrado separadamente)
-                                        valorGasto: 0,
-                                        cliques: 0,
-                                        cpc: 0,
-                                        visitas: views, // Views do VTurb
-                                        cpv: 0,
-                                        connectRate: 0,
+                                console.log(`[VTurb] Player ${player.name} - Views: ${totalViews}, Starts: ${totalStarts}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`);
 
-                                        // Métricas de Engajamento
-                                        passagem: finished > 0 && plays > 0 ? (finished / plays) * 100 : 0,
-                                        visuUnicaVSL: plays, // Plays únicos
-                                        cpvv: 0,
+                                const vturbMetric: DailyAnalytics = {
+                                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
+                                    vslId: player.id,
+                                    vslName: player.name || 'VSL VTurb',
+                                    platform: 'vturb',
 
-                                        // Métricas de Checkout (serão preenchidas com dados de vendas)
-                                        iniciouCheckout: 0,
-                                        convCheckout: 0,
+                                    // Métricas de Tráfego
+                                    valorGasto: 0,
+                                    cliques: 0,
+                                    cpc: 0,
+                                    visitas: totalViews, // Views totais do VTurb
+                                    cpv: 0,
+                                    connectRate: totalViews > 0 && totalStarts > 0 ? (totalStarts / totalViews) * 100 : 0,
 
-                                        // Métricas de Vendas (serão combinadas com dados do banco)
-                                        vendas: 0,
-                                        aov: 0,
-                                        cpa: 0,
+                                    // Métricas de Engajamento
+                                    passagem: totalStarts > 0 && totalFinished > 0 ? (totalFinished / totalStarts) * 100 : 0,
+                                    visuUnicaVSL: totalStarts, // Plays únicos
+                                    cpvv: 0,
 
-                                        // Order Bumps e Upsells
-                                        vendasOB1: 0,
-                                        convOB1: 0,
-                                        vendasOB2: 0,
-                                        convOB2: 0,
-                                        upsell1: 0,
-                                        convUpsell1: 0,
-                                        upsell2: 0,
-                                        convUpsell2: 0,
-                                        downsell: 0,
+                                    // Métricas de Checkout
+                                    iniciouCheckout: 0,
+                                    convCheckout: totalFinished > 0 && conversions > 0 ? (conversions / totalFinished) * 100 : 0,
 
-                                        observacoes: `Dados do VTurb - Plays: ${plays}, Views: ${views}, Finished: ${finished}`
-                                    };
+                                    // Métricas de Vendas
+                                    vendas: conversions,
+                                    aov: conversions > 0 ? totalRevenue / conversions : 0,
+                                    cpa: 0,
 
-                                    vslMetrics.push(vturbMetric);
-                                }
+                                    // Order Bumps e Upsells
+                                    vendasOB1: 0,
+                                    convOB1: 0,
+                                    vendasOB2: 0,
+                                    convOB2: 0,
+                                    upsell1: 0,
+                                    convUpsell1: 0,
+                                    upsell2: 0,
+                                    convUpsell2: 0,
+                                    downsell: 0,
+
+                                    observacoes: `VTurb (${dateRange}) - Views: ${totalViews}, Starts: ${totalStarts}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`
+                                };
+
+                                vslMetrics.push(vturbMetric);
                             }
                         } catch (playerError) {
                             console.error(`[VTurb] Erro ao processar player ${player.id}:`, playerError instanceof Error ? playerError.message : 'Erro desconhecido');
