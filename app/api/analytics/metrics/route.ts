@@ -30,10 +30,12 @@ export async function GET(request: NextRequest) {
         let vslMetrics: DailyAnalytics[] = [];
         if (process.env.VTURB_API_KEY) {
             try {
+                console.log('[DEBUG] Iniciando integração VTurb...');
                 const vturb = new VTurbClient(process.env.VTURB_API_KEY);
 
                 // Buscar todos os players se não especificado
                 const players = await vturb.listPlayers();
+                console.log('[DEBUG] Players encontrados:', players?.length || 0);
                 const vsls = vslId && vslId !== 'all'
                     ? players?.filter((p: any) => p.id === vslId)
                     : players;
@@ -137,8 +139,11 @@ export async function GET(request: NextRequest) {
                 }
             }
             } catch (vTurbError) {
+                console.error('[DEBUG] Erro na integração VTurb:', vTurbError);
                 // VTurb API failed, continuing without VSL data
             }
+        } else {
+            console.log('[DEBUG] VTURB_API_KEY não encontrada');
         }
 
         // 2. SEMPRE buscar dados do banco (independente do VTurb)

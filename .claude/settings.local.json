@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: correct order bump identification and project cleanup\n\n- Fixed Hubla webhook order bump detection using groupName field instead of ID patterns\n- Order bumps now identified by empty groupName (vs main sales with filled groupName)  \n- Improved association logic to find main sale by customer email and recency\n- Removed 399 lines of temporary debugging files (check-*.js, test-*.js, etc)\n- Consolidated duplicate webhook APIs (/api/webhooks/, /api/kiwify/webhook/, /api/test-metrics/)\n- Removed experimental pages (cdr_hubla, hubla, back-redirect)\n- Cleaned up console.log statements from production APIs\n- Organized utility scripts into /scripts/ folder\n- Dashboard should now correctly show 48 total items matching Hubla''s count\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push origin main)",
+      "Bash(git add app/api/test-vturb/route.ts)",
+      "Bash(git commit -m \"feat: add VTurb test API to diagnose integration issues\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb\")",
+      "Bash(git add -A)"
     ],
     "deny": [],
     "ask": []
