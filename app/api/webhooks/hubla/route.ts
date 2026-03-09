@@ -49,6 +49,12 @@ export async function POST(request: NextRequest) {
                         webhookData.transaction_id ||
                         `hubla_${Date.now()}`;
 
+          // IGNORAR webhooks de offers/upsells
+          if (saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'))) {
+            console.log('🚫 Ignoring offer/upsell webhook:', saleId);
+            return NextResponse.json({ status: 'ignored', reason: 'offer/upsell webhook' });
+          }
+
           // Verificar se já existe
           const existing = await prisma.sale.findFirst({
             where: { externalId: saleId.toString() }
@@ -97,6 +103,12 @@ export async function POST(request: NextRequest) {
         try {
           const saleId = data.id || webhookData.id || `hubla_${Date.now()}`;
 
+          // IGNORAR webhooks de offers/upsells
+          if (saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'))) {
+            console.log('🚫 Ignoring offer/upsell webhook:', saleId);
+            return NextResponse.json({ status: 'ignored', reason: 'offer/upsell webhook' });
+          }
+
           const existing = await prisma.sale.findFirst({
             where: { externalId: saleId.toString() }
           });
@@ -131,6 +143,12 @@ export async function POST(request: NextRequest) {
                       webhookData.sale_id ||
                       webhookData.transaction_id ||
                       `hubla_${Date.now()}`;
+
+        // IGNORAR webhooks de offers/upsells
+        if (saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'))) {
+          console.log('🚫 Ignoring offer/upsell webhook:', saleId);
+          return NextResponse.json({ status: 'ignored', reason: 'offer/upsell webhook' });
+        }
 
         const existing = await prisma.sale.findFirst({
           where: { externalId: saleId.toString() }

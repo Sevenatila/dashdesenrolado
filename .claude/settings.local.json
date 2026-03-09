@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dir /s)",
       "Bash(git add .)",
-      "Bash(git commit -m \"feat: add support for order bumps and upsells\n\n- Added totalAmount, customerName, productName columns to Sale table\n- Created SaleItem table for order bumps and upsells tracking\n- Database migration completed successfully\n- Ready to update webhook logic\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"feat: add support for order bumps and upsells\n\n- Added totalAmount, customerName, productName columns to Sale table\n- Created SaleItem table for order bumps and upsells tracking\n- Database migration completed successfully\n- Ready to update webhook logic\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"fix: ignore offer/upsell webhooks to prevent duplicate sales\n\n- Added validation to ignore webhook IDs containing ''-offer-'', ''-upsell-'', ''-downsell-''\n- Applied filter to all Hubla webhook formats (v1, v2, and legacy)\n- This prevents order bumps from being saved as separate sales\n- Only main sale transactions will now be processed\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

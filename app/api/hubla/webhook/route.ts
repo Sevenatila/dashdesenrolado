@@ -38,6 +38,12 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
 
         console.log('Processed webhook data:', { invoiceId, amount, email, fullName, eventType });
 
+        // IGNORAR webhooks de offers/upsells para evitar duplicatas
+        if (invoiceId && (invoiceId.includes('-offer-') || invoiceId.includes('-upsell-') || invoiceId.includes('-downsell-'))) {
+          console.log('🚫 Ignoring offer/upsell webhook:', invoiceId);
+          return;
+        }
+
         if (invoiceId && amount) {
           console.log('Attempting to save sale to database...');
 
