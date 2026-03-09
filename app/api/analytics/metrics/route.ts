@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
                                 }
                             }
                         } catch (playerError) {
-                            console.error(`[VTurb] Erro ao processar player ${player.id}:`, playerError.message);
+                            console.error(`[VTurb] Erro ao processar player ${player.id}:`, playerError instanceof Error ? playerError.message : 'Erro desconhecido');
                             // Continua com próximo player
                         }
                     }
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
                     console.log(`[VTurb] Total de métricas coletadas: ${vslMetrics.length}`);
                 }
             } catch (vTurbError) {
-                console.error('[VTurb] Erro na integração:', vTurbError.message);
+                console.error('[VTurb] Erro na integração:', vTurbError instanceof Error ? vTurbError.message : 'Erro desconhecido');
                 // Continua sem VTurb - não trava o dashboard
             }
         } else {

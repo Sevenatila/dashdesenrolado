@@ -33,7 +33,10 @@
       "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-01&endDate=2026-03-09\")",
       "Bash(vercel logs --app=dashdesenrolado --since=5m)",
       "Bash(vercel logs dashdesenrolado --since=5m)",
-      "Bash(git commit -m \"feat: adicionar endpoint de diagnóstico para integração VTurb\n\n- Criado /api/test-vturb-integration para testar conexão\n- Verifica API key configurada\n- Testa listagem de players\n- Testa busca de eventos\n- Retorna detalhes para debug\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"feat: adicionar endpoint de diagnóstico para integração VTurb\n\n- Criado /api/test-vturb-integration para testar conexão\n- Verifica API key configurada\n- Testa listagem de players\n- Testa busca de eventos\n- Retorna detalhes para debug\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/test-vturb-integration\")",
+      "Bash(python -m json.tool)",
+      "Bash(vercel list --count 3)"
     ],
     "deny": [],
     "ask": []
