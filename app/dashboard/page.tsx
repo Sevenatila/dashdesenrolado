@@ -16,6 +16,35 @@ import DateRangePicker from "@/components/dashboard/DateRangePicker";
 import PlayerSelector from "@/components/dashboard/PlayerSelector";
 import prisma from "@/lib/prisma";
 
+async function getTaxSettings() {
+    try {
+        const settings = await prisma.settings.findMany({
+            where: {
+                key: {
+                    in: ['tax_pix_percent', 'tax_card_percent']
+                }
+            }
+        });
+
+        const settingsMap = {
+            tax_pix_percent: '0',
+            tax_card_percent: '0',
+        };
+
+        settings.forEach(setting => {
+            settingsMap[setting.key as keyof typeof settingsMap] = setting.value;
+        });
+
+        return {
+            pixTax: parseFloat(settingsMap.tax_pix_percent),
+            cardTax: parseFloat(settingsMap.tax_card_percent)
+        };
+    } catch (error) {
+        console.error('Error fetching tax settings:', error);
+        return { pixTax: 0, cardTax: 0 };
+    }
+}
+
 async function getMetrics(start?: string, end?: string) {
     try {
         if (start && end) {
@@ -136,9 +165,37 @@ export default async function DashboardPage({
 }) {
     const { start, end } = await searchParams;
     const metrics = await getMetrics(start, end);
+    const taxSettings = await getTaxSettings();
 
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+    // Calcular valores líquidos com base nas taxas configuradas
+    const calculateNetValues = () => {
+        if (!metrics) return { netRevenue: 0, netTotalRevenue: 0 };
+
+        // Para demonstração, assumimos que 60% são PIX e 40% cartão
+        // Em implementação real, buscaríamos o método de pagamento de cada venda
+        const pixPercentage = 0.6;
+        const cardPercentage = 0.4;
+
+        // Receita principal líquida
+        const pixRevenue = (metrics.receitaGerada * pixPercentage);
+        const cardRevenue = (metrics.receitaGerada * cardPercentage);
+        const netRevenue = (pixRevenue * (1 - taxSettings.pixTax / 100)) +
+                          (cardRevenue * (1 - taxSettings.cardTax / 100));
+
+        // Receita total líquida (principal + order bumps)
+        const totalPixRevenue = ((metrics.receitaTotalLiquida || metrics.receitaGerada) * pixPercentage);
+        const totalCardRevenue = ((metrics.receitaTotalLiquida || metrics.receitaGerada) * cardPercentage);
+        const netTotalRevenue = (totalPixRevenue * (1 - taxSettings.pixTax / 100)) +
+                               (totalCardRevenue * (1 - taxSettings.cardTax / 100));
+
+        return { netRevenue, netTotalRevenue };
+    };
+
+    const { netRevenue, netTotalRevenue } = calculateNetValues();
+    const hasTaxes = taxSettings.pixTax > 0 || taxSettings.cardTax > 0;
 
     return (
         <div className="space-y-8 pb-12">
@@ -166,7 +223,7 @@ export default async function DashboardPage({
                         description="Total de faturas criadas durante o período"
                     />
                     <MetricCard
-                        title="Receita Produto Principal"
+                        title={hasTaxes ? "Receita Bruta Principal" : "Receita Produto Principal"}
                         value={formatCurrency(metrics?.receitaGerada || 0)}
                         icon={DollarSign}
                         description="Receita apenas do produto principal"
@@ -178,12 +235,32 @@ export default async function DashboardPage({
                         description="Vendas + Order Bumps + Upsells"
                     />
                     <MetricCard
-                        title="Receita Total Líquida"
+                        title={hasTaxes ? "Receita Total Bruta" : "Receita Total Líquida"}
                         value={formatCurrency((metrics?.receitaTotalLiquida || metrics?.receitaGerada || 0))}
                         icon={DollarSign}
                         description="Principal + Order Bumps + Upsells"
                     />
                 </div>
+
+                {/* Valores Líquidos - só mostrar se há taxas configuradas */}
+                {hasTaxes && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div></div> {/* Espaço vazio */}
+                        <MetricCard
+                            title="Receita Líquida Principal"
+                            value={formatCurrency(netRevenue)}
+                            icon={DollarSign}
+                            description={`Após taxas PIX (${taxSettings.pixTax}%) e Cartão (${taxSettings.cardTax}%)`}
+                        />
+                        <div></div> {/* Espaço vazio */}
+                        <MetricCard
+                            title="Receita Total Líquida"
+                            value={formatCurrency(netTotalRevenue)}
+                            icon={DollarSign}
+                            description={`Após taxas PIX (${taxSettings.pixTax}%) e Cartão (${taxSettings.cardTax}%)`}
+                        />
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {/* Métricas Complementares */}

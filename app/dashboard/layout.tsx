@@ -20,9 +20,9 @@ export default function DashboardLayout({
     const menuItems = [
         { name: "Geral", icon: LayoutDashboard, href: "/dashboard" },
         { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
+        { name: "Configurações", icon: Settings, href: "/dashboard/settings" },
         // { name: "Meta Ads", icon: TrendingUp, href: "/dashboard/meta" },
         // { name: "VTurb", icon: Video, href: "/dashboard/vturb" },
-        // { name: "Configurações", icon: Settings, href: "/dashboard/settings" },
     ];
 
     const handleLogout = () => {
