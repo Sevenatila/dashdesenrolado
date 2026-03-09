@@ -38,9 +38,50 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
 
         console.log('Processed webhook data:', { invoiceId, amount, email, fullName, eventType });
 
-        // IGNORAR webhooks de offers/upsells para evitar duplicatas
-        if (invoiceId && (invoiceId.includes('-offer-') || invoiceId.includes('-upsell-') || invoiceId.includes('-downsell-'))) {
-          console.log('🚫 Ignoring offer/upsell webhook:', invoiceId);
+        // Identificar se é order bump/upsell
+        const isOrderBump = invoiceId && (invoiceId.includes('-offer-') || invoiceId.includes('-upsell-') || invoiceId.includes('-downsell-'));
+
+        if (isOrderBump) {
+          console.log('📦 Processing order bump/upsell:', invoiceId);
+
+          // Extrair ID da venda principal (remove sufixo -offer-X, -upsell-X, etc)
+          const mainSaleId = invoiceId.replace(/-(?:offer|upsell|downsell)-\d+$/, '');
+
+          // Buscar venda principal
+          const mainSale = await prisma.sale.findFirst({
+            where: { externalId: mainSaleId }
+          });
+
+          if (mainSale) {
+            // Verificar se order bump já existe
+            const existingItem = await prisma.saleItem.findFirst({
+              where: {
+                saleId: mainSale.id,
+                externalId: invoiceId
+              }
+            });
+
+            if (!existingItem) {
+              // Salvar como item da venda
+              await prisma.saleItem.create({
+                data: {
+                  saleId: mainSale.id,
+                  externalId: invoiceId,
+                  amount: amount,
+                  type: invoiceId.includes('-offer-') ? 'ORDER_BUMP' :
+                        invoiceId.includes('-upsell-') ? 'UPSELL' : 'DOWNSELL',
+                  productName: eventType === 'NewSale' ? 'Order Bump' : 'Order Bump',
+                  createdAt: eventType === 'NewSale'
+                    ? (eventData.createdAt ? new Date(eventData.createdAt) : new Date())
+                    : (eventData.invoice?.createdAt ? new Date(eventData.invoice.createdAt) : new Date())
+                }
+              });
+
+              console.log(`✅ Order bump saved: ${invoiceId} - R$ ${amount}`);
+            }
+          } else {
+            console.log(`⚠️ Main sale not found for order bump: ${mainSaleId}`);
+          }
           return;
         }
 

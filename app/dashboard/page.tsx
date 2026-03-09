@@ -19,6 +19,7 @@ import prisma from "@/lib/prisma";
 async function getMetrics(start?: string, end?: string) {
     try {
         if (start && end) {
+            // Buscar métricas da DailyPerformance
             const metrics = await prisma.dailyPerformance.findMany({
                 where: {
                     date: {
@@ -28,20 +29,54 @@ async function getMetrics(start?: string, end?: string) {
                 }
             });
 
+            // Buscar vendas e order bumps para cálculo total
+            const sales = await prisma.sale.findMany({
+                where: {
+                    createdAt: {
+                        gte: new Date(start),
+                        lte: new Date(end)
+                    }
+                },
+                include: {
+                    items: true // Incluir order bumps/upsells
+                }
+            });
+
             if (metrics.length === 0) return null;
+
+            // Calcular métricas de vendas
+            const totalMainSales = sales.length;
+            const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
+
+            // Calcular total de itens (vendas + order bumps)
+            const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
+
+            // Calcular receita total (principal + order bumps)
+            const totalRevenue = sales.reduce((acc, sale) => {
+                const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
+                return acc + sale.amount + orderBumpRevenue;
+            }, 0);
 
             // Agrega os dados do período
             return {
                 date: end,
-                receitaGerada: metrics.reduce((acc, m) => acc + m.receitaGerada, 0),
-                vendas: metrics.reduce((acc, m) => acc + m.vendas, 0),
+                // Métricas de vendas principais
+                vendas: totalMainSales,
+                receitaGerada: totalMainRevenue,
+
+                // Métricas totais (principal + order bumps)
+                totalItens: totalItems,
+                receitaTotalLiquida: totalRevenue,
+
+                // Outras métricas
                 valorGasto: metrics.reduce((acc, m) => acc + m.valorGasto, 0),
                 cliquesLink: metrics.reduce((acc, m) => acc + m.cliquesLink, 0),
                 playsUnicosVSL: metrics.reduce((acc, m) => acc + m.playsUnicosVSL, 0),
                 visualizacaoPage: metrics.reduce((acc, m) => acc + m.visualizacaoPage, 0),
                 // Médias ponderadas para outras métricas seriam ideais, mas aqui fazemos médias simples ou novos cálculos
-                cpa: metrics.reduce((acc, m) => acc + m.valorGasto, 0) / (metrics.reduce((acc, m) => acc + m.vendas, 0) || 1),
-                ticketMedio: metrics.reduce((acc, m) => acc + m.receitaGerada, 0) / (metrics.reduce((acc, m) => acc + m.vendas, 0) || 1),
+                cpa: metrics.reduce((acc, m) => acc + m.valorGasto, 0) / (totalMainSales || 1),
+                ticketMedio: totalMainRevenue / (totalMainSales || 1),
+                ticketMedioTotal: totalRevenue / (totalMainSales || 1),
                 conversaoVSL: Math.round(metrics.reduce((acc, m) => acc + m.conversaoVSL, 0) / metrics.length),
                 retencaoLeadVSL: Math.round(metrics.reduce((acc, m) => acc + m.retencaoLeadVSL, 0) / metrics.length),
                 engajamentoVSL: Math.round(metrics.reduce((acc, m) => acc + m.engajamentoVSL, 0) / metrics.length),
@@ -58,6 +93,33 @@ async function getMetrics(start?: string, end?: string) {
         const latest = await prisma.dailyPerformance.findFirst({
             orderBy: { date: 'desc' }
         });
+
+        if (latest) {
+            // Para métricas sem filtro, também buscar dados das vendas
+            const sales = await prisma.sale.findMany({
+                include: {
+                    items: true
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100 // Últimas 100 vendas para cálculo
+            });
+
+            const totalMainSales = sales.length;
+            const totalMainRevenue = sales.reduce((acc, sale) => acc + sale.amount, 0);
+            const totalItems = sales.reduce((acc, sale) => acc + 1 + sale.items.length, 0);
+            const totalRevenue = sales.reduce((acc, sale) => {
+                const orderBumpRevenue = sale.items.reduce((itemAcc, item) => itemAcc + item.amount, 0);
+                return acc + sale.amount + orderBumpRevenue;
+            }, 0);
+
+            return {
+                ...latest,
+                totalItens: totalItems,
+                receitaTotalLiquida: totalRevenue,
+                ticketMedioTotal: totalRevenue / (totalMainSales || 1)
+            };
+        }
+
         return latest;
     } catch (error) {
         console.error("Error fetching metrics:", error);
@@ -94,23 +156,46 @@ export default async function DashboardPage({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Financeiro e Vendas */}
+                    {/* Vendas de Produto Principal */}
                     <MetricCard
-                        title="Receita Gerada"
-                        value={formatCurrency(metrics?.receitaGerada || 0)}
-                        icon={DollarSign}
-                        description="UTMify"
-                    />
-                    <MetricCard
-                        title="Vendas Totais"
+                        title="Número de Faturas"
                         value={metrics?.vendas.toString() || "0"}
                         icon={ShoppingCart}
+                        description="Total de faturas criadas durante o período"
                     />
                     <MetricCard
-                        title="Ticket Médio"
+                        title="Receita Produto Principal"
+                        value={formatCurrency(metrics?.receitaGerada || 0)}
+                        icon={DollarSign}
+                        description="Receita apenas do produto principal"
+                    />
+                    <MetricCard
+                        title="Número de Itens nas Faturas"
+                        value={(metrics?.totalItens || metrics?.vendas || 0).toString()}
+                        icon={ShoppingCart}
+                        description="Vendas + Order Bumps + Upsells"
+                    />
+                    <MetricCard
+                        title="Receita Total Líquida"
+                        value={formatCurrency((metrics?.receitaTotalLiquida || metrics?.receitaGerada || 0))}
+                        icon={DollarSign}
+                        description="Principal + Order Bumps + Upsells"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Métricas Complementares */}
+                    <MetricCard
+                        title="Ticket Médio Principal"
                         value={formatCurrency(metrics?.ticketMedio || 0)}
                         icon={BarChart3}
-                        description="Receita / Vendas"
+                        description="Receita Principal / Faturas"
+                    />
+                    <MetricCard
+                        title="Ticket Médio Total"
+                        value={formatCurrency((metrics?.ticketMedioTotal || metrics?.ticketMedio || 0))}
+                        icon={BarChart3}
+                        description="Receita Total / Faturas"
                     />
                     <MetricCard
                         title="Valor Gasto"
@@ -118,16 +203,16 @@ export default async function DashboardPage({
                         icon={TrendingUp}
                         description="Meta Ads"
                     />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Tráfego e Performance */}
                     <MetricCard
                         title="CPA Total"
                         value={formatCurrency(metrics?.cpa || 0)}
                         icon={Target}
                         description="Gasto / Vendas"
                     />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Tráfego e Performance */}
                     <MetricCard
                         title="Cliques no Link"
                         value={metrics?.cliquesLink.toString() || "0"}

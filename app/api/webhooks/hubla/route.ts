@@ -49,10 +49,50 @@ export async function POST(request: NextRequest) {
                         webhookData.transaction_id ||
                         `hubla_${Date.now()}`;
 
-          // IGNORAR webhooks de offers/upsells
-          if (saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'))) {
-            console.log('🚫 Ignoring offer/upsell webhook:', saleId);
-            return NextResponse.json({ status: 'ignored', reason: 'offer/upsell webhook' });
+          // Identificar se é order bump/upsell
+          const isOrderBump = saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'));
+
+          if (isOrderBump) {
+            console.log('📦 Processing order bump/upsell:', saleId);
+
+            const amount = webhookData.venda?.valor ||
+                          webhookData.valor ||
+                          webhookData.price ||
+                          webhookData.amount ||
+                          0;
+
+            // Extrair ID da venda principal
+            const mainSaleId = saleId.replace(/-(?:offer|upsell|downsell)-\d+$/, '');
+
+            // Buscar venda principal
+            const mainSale = await prisma.sale.findFirst({
+              where: { externalId: mainSaleId }
+            });
+
+            if (mainSale) {
+              const existingItem = await prisma.saleItem.findFirst({
+                where: {
+                  saleId: mainSale.id,
+                  externalId: saleId
+                }
+              });
+
+              if (!existingItem) {
+                await prisma.saleItem.create({
+                  data: {
+                    saleId: mainSale.id,
+                    externalId: saleId,
+                    amount: parseFloat(amount.toString()),
+                    type: saleId.includes('-offer-') ? 'ORDER_BUMP' :
+                          saleId.includes('-upsell-') ? 'UPSELL' : 'DOWNSELL',
+                    productName: 'Order Bump',
+                    createdAt: webhookData.criado_em ? new Date(webhookData.criado_em) : new Date()
+                  }
+                });
+                console.log(`✅ Order bump saved: ${saleId} - R$ ${amount}`);
+              }
+            }
+            return NextResponse.json({ status: 'success', message: 'Order bump processed' });
           }
 
           // Verificar se já existe
@@ -103,10 +143,50 @@ export async function POST(request: NextRequest) {
         try {
           const saleId = data.id || webhookData.id || `hubla_${Date.now()}`;
 
-          // IGNORAR webhooks de offers/upsells
-          if (saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'))) {
-            console.log('🚫 Ignoring offer/upsell webhook:', saleId);
-            return NextResponse.json({ status: 'ignored', reason: 'offer/upsell webhook' });
+          // Identificar se é order bump/upsell
+          const isOrderBump = saleId && (saleId.includes('-offer-') || saleId.includes('-upsell-') || saleId.includes('-downsell-'));
+
+          if (isOrderBump) {
+            console.log('📦 Processing order bump/upsell:', saleId);
+
+            const amount = webhookData.venda?.valor ||
+                          webhookData.valor ||
+                          webhookData.price ||
+                          webhookData.amount ||
+                          0;
+
+            // Extrair ID da venda principal
+            const mainSaleId = saleId.replace(/-(?:offer|upsell|downsell)-\d+$/, '');
+
+            // Buscar venda principal
+            const mainSale = await prisma.sale.findFirst({
+              where: { externalId: mainSaleId }
+            });
+
+            if (mainSale) {
+              const existingItem = await prisma.saleItem.findFirst({
+                where: {
+                  saleId: mainSale.id,
+                  externalId: saleId
+                }
+              });
+
+              if (!existingItem) {
+                await prisma.saleItem.create({
+                  data: {
+                    saleId: mainSale.id,
+                    externalId: saleId,
+                    amount: parseFloat(amount.toString()),
+                    type: saleId.includes('-offer-') ? 'ORDER_BUMP' :
+                          saleId.includes('-upsell-') ? 'UPSELL' : 'DOWNSELL',
+                    productName: 'Order Bump',
+                    createdAt: webhookData.criado_em ? new Date(webhookData.criado_em) : new Date()
+                  }
+                });
+                console.log(`✅ Order bump saved: ${saleId} - R$ ${amount}`);
+              }
+            }
+            return NextResponse.json({ status: 'success', message: 'Order bump processed' });
           }
 
           const existing = await prisma.sale.findFirst({
