@@ -20,7 +20,8 @@ export class VTurbClient {
             console.log("[VTurb] Listando players...");
             const response = await fetch(`${this.baseUrl}/players/list`, {
                 method: 'GET',
-                headers: this.getHeaders()
+                headers: this.getHeaders(),
+                signal: AbortSignal.timeout(10000) // 10 segundos timeout
             });
 
             if (!response.ok) {
@@ -50,7 +51,8 @@ export class VTurbClient {
                     start_date: startDate,
                     end_date: endDate,
                     timezone: 'America/Sao_Paulo'
-                })
+                }),
+                signal: AbortSignal.timeout(15000) // 15 segundos timeout
             });
 
             if (!response.ok) {
@@ -81,7 +83,8 @@ export class VTurbClient {
                     start_date: startDate,
                     end_date: endDate,
                     timezone: 'America/Sao_Paulo'
-                })
+                }),
+                signal: AbortSignal.timeout(15000) // 15 segundos timeout
             });
 
             if (!response.ok) {

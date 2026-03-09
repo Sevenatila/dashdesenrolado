@@ -15,7 +15,10 @@
       "Bash(vercel list)",
       "Bash(vercel logs https://dashdesenrolado-1jc2rmb2u-atila-gomes-pazs-projects.vercel.app)",
       "Bash(vercel --prod)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(git commit -m \"fix: TypeScript error in Hubla webhook error handling\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(vercel inspect dashdesenrolado-mcptid16w-atila-gomes-pazs-projects.vercel.app --logs)",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-09&endDate=2026-03-09\")"
     ],
     "deny": [],
     "ask": []
