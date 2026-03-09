@@ -62,15 +62,15 @@ export async function GET(request: NextRequest) {
                                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 30000))
                             ]) as any;
 
-                            if (sessionStats && sessionStats.data && sessionStats.data.events) {
+                            if (sessionStats && sessionStats.data) {
                                 console.log(`[VTurb] Processando estatísticas de sessão do player ${player.name}`);
 
-                                // A API /sessions/stats retorna dados agregados
-                                const totalViews = sessionStats.data.events.viewed || 0;
-                                const totalStarts = sessionStats.data.events.started || 0;
-                                const totalFinished = sessionStats.data.events.finished || 0;
-                                const conversions = sessionStats.data.conversions || 0;
-                                const totalRevenue = sessionStats.data.total_revenue || 0;
+                                // A API /sessions/stats retorna dados agregados diretos
+                                const totalViews = sessionStats.data.total_viewed || 0;
+                                const totalStarts = sessionStats.data.total_started || 0;
+                                const totalFinished = sessionStats.data.total_finished || 0;
+                                const conversions = sessionStats.data.total_conversions || 0;
+                                const totalRevenue = sessionStats.data.total_amount_brl || 0;
 
                                 // Criar uma métrica única para todo o período
                                 const dateRange = `${startDate.split('T')[0]} a ${endDate.split('T')[0]}`;
