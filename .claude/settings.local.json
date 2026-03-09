@@ -29,7 +29,11 @@
       "WebSearch",
       "WebFetch(domain:help.vturb.com)",
       "Bash(curl -s \"http://localhost:3000/api/analytics/metrics?startDate=2026-03-01&endDate=2026-03-09\")",
-      "Bash(git commit -m \"fix: melhorar integração VTurb com timeouts adequados e processamento completo\n\n- Aumentado timeout de 5s para 30s em todas as requisições VTurb\n- Implementado processamento de todos os players (não apenas teste)\n- Adicionado cálculo de métricas (plays, views, finished, retenção)\n- Melhorado logging para debug da integração\n- Mantido fallback para banco de dados caso VTurb falhe\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: melhorar integração VTurb com timeouts adequados e processamento completo\n\n- Aumentado timeout de 5s para 30s em todas as requisições VTurb\n- Implementado processamento de todos os players (não apenas teste)\n- Adicionado cálculo de métricas (plays, views, finished, retenção)\n- Melhorado logging para debug da integração\n- Mantido fallback para banco de dados caso VTurb falhe\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/analytics/metrics?startDate=2026-03-01&endDate=2026-03-09\")",
+      "Bash(vercel logs --app=dashdesenrolado --since=5m)",
+      "Bash(vercel logs dashdesenrolado --since=5m)",
+      "Bash(git commit -m \"feat: adicionar endpoint de diagnóstico para integração VTurb\n\n- Criado /api/test-vturb-integration para testar conexão\n- Verifica API key configurada\n- Testa listagem de players\n- Testa busca de eventos\n- Retorna detalhes para debug\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []
