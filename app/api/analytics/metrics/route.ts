@@ -7,15 +7,12 @@ import { DailyAnalytics } from "@/types/analytics";
 
 export async function GET(request: NextRequest) {
     try {
-        // Verificar autenticação apenas em produção
-        const session = await getServerSession(authOptions);
-
-        // Em desenvolvimento, permitir acesso sem autenticação para testes
-        const isDevelopment = process.env.NODE_ENV === 'development';
-
-        if (!session && !isDevelopment) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // Permitir acesso sem autenticação para facilitar uso
+        // TODO: Reimplementar autenticação quando necessário
+        // const session = await getServerSession(authOptions);
+        // if (!session) {
+        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // }
 
         // Pegar parâmetros de filtro
         const searchParams = request.nextUrl.searchParams;
