@@ -43,9 +43,11 @@ export async function GET(request: NextRequest) {
                 console.log('[VTurb] Players encontrados:', players?.length || 0);
 
                 if (players && players.length > 0) {
-                    // Processar apenas os primeiros 5 players para evitar timeout
-                    console.log(`[VTurb] Processando apenas os primeiros 5 players de ${players.length} disponíveis para evitar timeout`);
-                    const playersToProcess = players.slice(0, 5);
+                    // Processar apenas a VSL específica que sabemos que tem dados
+                    const targetPlayer = players.find(p => p.id === "69921cdd92e29505e061e647");
+                    const playersToProcess = targetPlayer ? [targetPlayer] : players.slice(0, 2);
+
+                    console.log(`[VTurb] Processando ${playersToProcess.length} players (foco na VSL principal)`);
 
                     for (const player of playersToProcess) {
                         console.log(`[VTurb] Buscando eventos do player: ${player.id} - ${player.name}`);
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
 
                             const sessionStats = await Promise.race([
                                 eventsPromise,
-                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 30000))
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 10000))
                             ]) as any;
 
                             if (sessionStats && sessionStats.data) {
