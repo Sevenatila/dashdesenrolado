@@ -51,12 +51,14 @@ export async function GET(request: NextRequest) {
 
                         if (sessionStats && sessionStats.total_viewed !== undefined) {
                             const totalViews = sessionStats.total_viewed || 0;
+                            const totalViewsUnique = sessionStats.total_viewed_device_uniq || 0; // Views Únicos VSL
                             const totalStarts = sessionStats.total_started || 0;
+                            const totalStartsUnique = sessionStats.total_started_device_uniq || 0; // Plays Únicos VSL
                             const totalFinished = sessionStats.total_finished || 0;
                             const conversions = sessionStats.total_conversions || 0;
                             const totalRevenue = sessionStats.total_amount_brl || 0;
 
-                            logs.push(`[DEBUG] Dados processados: Views=${totalViews}, Starts=${totalStarts}, Finished=${totalFinished}, Conv=${conversions}, Rev=R$${totalRevenue}`);
+                            logs.push(`[DEBUG] Dados processados: Views=${totalViews}, ViewsUniq=${totalViewsUnique}, Starts=${totalStarts}, StartsUniq=${totalStartsUnique}, Finished=${totalFinished}, Conv=${conversions}, Rev=R$${totalRevenue}`);
 
                             const vturbMetric: DailyAnalytics = {
                                 date: new Date(endDate + 'T00:00:00'),
@@ -69,10 +71,11 @@ export async function GET(request: NextRequest) {
                                 cpc: 0,
                                 visitas: totalViews,
                                 cpv: 0,
-                                connectRate: totalViews > 0 && totalStarts > 0 ? (totalStarts / totalViews) * 100 : 0,
+                                connectRate: totalViewsUnique > 0 && totalStartsUnique > 0 ? (totalStartsUnique / totalViewsUnique) * 100 : 0,
 
-                                passagem: totalStarts > 0 && totalFinished > 0 ? (totalFinished / totalStarts) * 100 : 0,
-                                visuUnicaVSL: totalStarts,
+                                passagem: totalStartsUnique > 0 && totalFinished > 0 ? (totalFinished / totalStartsUnique) * 100 : 0,
+                                visuUnicaVSL: totalStartsUnique, // Plays Únicos VSL (corrigido)
+                                viewsUnicosVSL: totalViewsUnique, // Views Únicos VSL (novo campo)
                                 cpvv: 0,
 
                                 iniciouCheckout: 0,
@@ -92,7 +95,7 @@ export async function GET(request: NextRequest) {
                                 convUpsell2: 0,
                                 downsell: 0,
 
-                                observacoes: `VTurb Debug - Views: ${totalViews}, Starts: ${totalStarts}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`
+                                observacoes: `VTurb Debug - Views: ${totalViews}, Views Únicos: ${totalViewsUnique}, Starts: ${totalStarts}, Starts Únicos: ${totalStartsUnique}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`
                             };
 
                             vslMetrics.push(vturbMetric);

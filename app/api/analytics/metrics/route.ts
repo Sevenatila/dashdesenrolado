@@ -91,9 +91,9 @@ export async function GET(request: NextRequest) {
 
                                 // A API /sessions/stats retorna dados agregados diretos (não tem .data)
                                 const totalViews = sessionStats.total_viewed || 0;  // Total de views (não único)
-                                const totalViewsUnique = sessionStats.total_viewed_session_uniq || sessionStats.total_viewed_device_uniq || 0; // Views únicas
+                                const totalViewsUnique = sessionStats.total_viewed_device_uniq || 0; // Views únicos por dispositivo (VSL)
                                 const totalStarts = sessionStats.total_started || 0;
-                                const totalStartsUnique = sessionStats.total_started_session_uniq || sessionStats.total_started_device_uniq || 0; // Starts únicos
+                                const totalStartsUnique = sessionStats.total_started_device_uniq || 0; // Starts únicos por dispositivo (VSL)
                                 const totalFinished = sessionStats.total_finished || 0;
                                 const conversions = sessionStats.total_conversions || 0;
                                 const totalRevenue = sessionStats.total_amount_brl || 0;
