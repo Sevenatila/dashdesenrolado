@@ -21,13 +21,10 @@ export async function GET(request: NextRequest) {
         const startDateParam = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const endDateParam = searchParams.get('endDate') || new Date().toISOString();
 
-        // ✅ CORREÇÃO DE TIMEZONE: Ajustar datas para compensar diferença de fuso
-        // Problema: vendas do dia X na Hubla aparecem como X+1 no banco
+        // ✅ CORREÇÃO: Usar datas exatas sem ajuste de timezone por enquanto
+        // TODO: Investigar timezone correto entre Hubla e banco
         const startDate = new Date(startDateParam);
-        startDate.setHours(startDate.getHours() - 3); // Retroceder 3h para capturar início do dia
-
         const endDate = new Date(endDateParam);
-        endDate.setHours(endDate.getHours() + 21); // Avançar 21h para cobrir todo o dia seguinte
 
         console.log(`[Timezone] Original: ${startDateParam} to ${endDateParam}`);
         console.log(`[Timezone] Adjusted: ${startDate.toISOString()} to ${endDate.toISOString()}`);
