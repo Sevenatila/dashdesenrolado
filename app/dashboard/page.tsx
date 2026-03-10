@@ -94,7 +94,6 @@ export default function DashboardPage() {
                     // TRÁFEGO: Meta Ads (manual ou API futura)
                     valorGasto: 0, // Meta Ads
                     cliquesLink: 0, // Meta Ads
-                    visualizacaoPage: 0, // Meta Ads ou manual
 
                     // VSL ANALYTICS: APENAS do VTurb (o que você pediu)
                     playsUnicosVSL: vturbData ? vturbData.visuUnicaVSL : 0,  // Plays únicos (starts)
