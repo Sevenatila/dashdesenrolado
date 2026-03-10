@@ -25,8 +25,8 @@ export default function AnalyticsPage() {
     const [data, setData] = useState<DailyAnalytics[]>([]);
     const [filteredData, setFilteredData] = useState<DailyAnalytics[]>([]);
     const [summary, setSummary] = useState<MetricsSummary | null>(null);
-    const [selectedVSL, setSelectedVSL] = useState<string | null>(null);
-    const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+    const [selectedVSL, setSelectedVSL] = useState<string | null | undefined>(undefined);
+    const [selectedPlatform, setSelectedPlatform] = useState<string | null | undefined>(undefined);
     const [dateRange, setDateRange] = useState({
         start: new Date(new Date().setDate(new Date().getDate() - 30)),
         end: new Date()
@@ -53,12 +53,21 @@ export default function AnalyticsPage() {
                 endDate: dateRange.end.toISOString()
             });
 
-            if (selectedVSL && selectedVSL !== 'all') {
-                params.append('vslId', selectedVSL);
+            // Adicionar filtros se selecionados
+            if (selectedVSL !== undefined) {
+                if (selectedVSL === null || selectedVSL === 'all') {
+                    params.append('vslId', 'all');
+                } else {
+                    params.append('vslId', selectedVSL);
+                }
             }
 
-            if (selectedPlatform && selectedPlatform !== 'all') {
-                params.append('platform', selectedPlatform);
+            if (selectedPlatform !== undefined) {
+                if (selectedPlatform === null || selectedPlatform === 'all') {
+                    params.append('platform', 'all');
+                } else {
+                    params.append('platform', selectedPlatform);
+                }
             }
 
             console.log('API URL:', `/api/analytics/metrics?${params.toString()}`);
@@ -237,14 +246,24 @@ export default function AnalyticsPage() {
                 endDate: dateRange.end.toISOString()
             });
 
-            if (selectedVSL && selectedVSL !== 'all') {
-                console.log('➕ Adding VSL param:', selectedVSL);
-                params.append('vslId', selectedVSL);
+            if (selectedVSL !== undefined) {
+                if (selectedVSL === null || selectedVSL === 'all') {
+                    console.log('➕ Adding VSL param: all');
+                    params.append('vslId', 'all');
+                } else {
+                    console.log('➕ Adding VSL param:', selectedVSL);
+                    params.append('vslId', selectedVSL);
+                }
             }
 
-            if (selectedPlatform && selectedPlatform !== 'all') {
-                console.log('➕ Adding Platform param:', selectedPlatform);
-                params.append('platform', selectedPlatform);
+            if (selectedPlatform !== undefined) {
+                if (selectedPlatform === null || selectedPlatform === 'all') {
+                    console.log('➕ Adding Platform param: all');
+                    params.append('platform', 'all');
+                } else {
+                    console.log('➕ Adding Platform param:', selectedPlatform);
+                    params.append('platform', selectedPlatform);
+                }
             }
 
             const finalUrl = `/api/analytics/metrics?${params}`;
@@ -281,7 +300,8 @@ export default function AnalyticsPage() {
         console.log('🎯 selectedVSL:', selectedVSL);
         console.log('🏢 selectedPlatform:', selectedPlatform);
 
-        if (selectedVSL !== null || selectedPlatform !== null) {
+        // Só chamar a API quando o usuário selecionou algo (não está mais undefined)
+        if (selectedVSL !== undefined || selectedPlatform !== undefined) {
             console.log('✅ Filter condition met, calling handleFilterChange in 500ms');
             const timer = setTimeout(() => {
                 console.log('⏰ Timer triggered, calling handleFilterChange now');
@@ -293,7 +313,7 @@ export default function AnalyticsPage() {
                 clearTimeout(timer);
             };
         } else {
-            console.log('❌ No filter selected, skipping API call');
+            console.log('❌ No filter selected yet, waiting for user selection');
         }
     }, [selectedVSL, selectedPlatform]);
 

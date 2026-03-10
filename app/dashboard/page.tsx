@@ -57,8 +57,8 @@ export default function DashboardPage() {
     const [taxSettings, setTaxSettings] = useState<TaxSettings>({ pixTax: 0, cardTax: 0 });
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [selectedVSL, setSelectedVSL] = useState<string | null>(null);
-    const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+    const [selectedVSL, setSelectedVSL] = useState<string | null | undefined>(undefined);
+    const [selectedPlatform, setSelectedPlatform] = useState<string | null | undefined>(undefined);
     const [dateRange, setDateRange] = useState({
         start: new Date(new Date().setDate(new Date().getDate() - 7)),
         end: new Date()
@@ -79,12 +79,23 @@ export default function DashboardPage() {
             });
 
             // Adicionar filtros se selecionados
-            if (selectedVSL && selectedVSL !== 'all') {
-                params.append('vslId', selectedVSL);
+            // Se selectedVSL é undefined, não enviar parâmetro (não busca VTurb)
+            // Se é null, envia 'all' para buscar todas
+            // Se tem valor específico, envia o ID da VSL
+            if (selectedVSL !== undefined) {
+                if (selectedVSL === null || selectedVSL === 'all') {
+                    params.append('vslId', 'all');
+                } else {
+                    params.append('vslId', selectedVSL);
+                }
             }
 
-            if (selectedPlatform && selectedPlatform !== 'all') {
-                params.append('platform', selectedPlatform);
+            if (selectedPlatform !== undefined) {
+                if (selectedPlatform === null || selectedPlatform === 'all') {
+                    params.append('platform', 'all');
+                } else {
+                    params.append('platform', selectedPlatform);
+                }
             }
 
             console.log('🌐 Dashboard API URL:', `/api/analytics/metrics?${params}`);
@@ -94,53 +105,86 @@ export default function DashboardPage() {
                 const result = await response.json();
                 const analyticsData: DailyAnalytics[] = result.data || [];
 
-                // Separar dados: APENAS analytics de vídeo do VTurb, vendas vêm do banco
-                const vturbData = analyticsData.find(item => item.platform === 'vturb');
-                const bankData = analyticsData.find(item => item.platform === 'all');
+                // Separar dados: analytics de vídeo do VTurb (pode ser múltiplos), vendas vêm do banco
+                const vturbDataArray = analyticsData.filter(item => item.platform === 'vturb');
+                const bankDataArray = analyticsData.filter(item => item.platform === 'all');
 
-                console.log('🎯 VTurb Analytics Data:', vturbData);
-                console.log('🏦 Vendas do Banco:', bankData);
+                console.log('🎯 VTurb Analytics Data:', vturbDataArray.length, 'VSLs');
+                console.log('🏦 Vendas do Banco:', bankDataArray.length, 'registros');
                 console.log('📊 All Data:', analyticsData);
 
-                // FORÇAR valores para debug
-                if (vturbData) {
-                    console.log('🔥 VALORES REAIS VTURB:');
-                    console.log('   - visitas (views):', vturbData.visitas);
-                    console.log('   - visuUnicaVSL (plays):', vturbData.visuUnicaVSL);
-                    console.log('   - passagem (retenção):', vturbData.passagem);
-                    console.log('   - connectRate:', vturbData.connectRate);
+                // AGREGAR dados de múltiplas VSLs do VTurb
+                let vturbTotals = {
+                    visitas: 0,
+                    visuUnicaVSL: 0,
+                    passagem: 0,
+                    connectRate: 0,
+                    vendas: 0,
+                    receita: 0
+                };
+
+                if (vturbDataArray.length > 0) {
+                    // Somar todas as métricas das VSLs
+                    vturbTotals = vturbDataArray.reduce((acc, vsl) => ({
+                        visitas: acc.visitas + (vsl.visitas || 0),
+                        visuUnicaVSL: acc.visuUnicaVSL + (vsl.visuUnicaVSL || 0),
+                        passagem: acc.passagem + (vsl.passagem || 0), // Média ponderada seria melhor
+                        connectRate: acc.connectRate + (vsl.connectRate || 0), // Média ponderada seria melhor
+                        vendas: acc.vendas + (vsl.vendas || 0),
+                        receita: acc.receita + ((vsl.vendas || 0) * (vsl.aov || 0))
+                    }), vturbTotals);
+
+                    // Calcular médias para percentuais
+                    if (vturbDataArray.length > 1) {
+                        vturbTotals.passagem = vturbTotals.passagem / vturbDataArray.length;
+                        vturbTotals.connectRate = vturbTotals.connectRate / vturbDataArray.length;
+                    }
+
+                    console.log('🔥 TOTAIS AGREGADOS VTURB:');
+                    console.log('   - Total VSLs processadas:', vturbDataArray.length);
+                    console.log('   - visitas (views):', vturbTotals.visitas);
+                    console.log('   - visuUnicaVSL (plays):', vturbTotals.visuUnicaVSL);
+                    console.log('   - passagem (retenção média):', vturbTotals.passagem);
+                    console.log('   - connectRate (média):', vturbTotals.connectRate);
                 }
 
-                // CORREÇÃO: Usar APENAS analytics de VSL do VTurb, vendas e tráfego de outras fontes
+                // AGREGAR dados do banco
+                const bankTotals = bankDataArray.reduce((acc, bank) => ({
+                    vendas: acc.vendas + (bank.vendas || 0),
+                    receita: acc.receita + ((bank.vendas || 0) * (bank.aov || 0)),
+                    aov: bank.aov || 0 // Pegar o último AOV
+                }), { vendas: 0, receita: 0, aov: 0 });
+
+                // CORREÇÃO: Usar dados agregados de todas as VSLs
                 const aggregatedMetrics: DashboardMetrics = {
                     // VENDAS: Apenas do banco (Hubla, Kiwify, etc)
-                    vendas: bankData?.vendas || 0,
-                    receitaGerada: bankData ? bankData.vendas * bankData.aov : 0,
-                    totalItens: bankData?.vendas || 0,
-                    receitaTotalLiquida: bankData ? bankData.vendas * bankData.aov : 0,
+                    vendas: bankTotals.vendas,
+                    receitaGerada: bankTotals.receita,
+                    totalItens: bankTotals.vendas,
+                    receitaTotalLiquida: bankTotals.receita,
 
                     // TRÁFEGO: Meta Ads (manual ou API futura)
                     valorGasto: 0, // Meta Ads
                     cliquesLink: 0, // Meta Ads
 
-                    // VSL ANALYTICS: APENAS do VTurb (o que você pediu)
-                    playsUnicosVSL: vturbData ? vturbData.visuUnicaVSL : 0,  // Plays únicos (starts)
-                    visualizacaoPage: vturbData ? vturbData.visitas : 0,     // Visualizações únicas (views)
-                    retencaoLeadVSL: vturbData ? vturbData.passagem : 0,
-                    engajamentoVSL: vturbData ? vturbData.connectRate : 0,
-                    retencaoPitchVSL: vturbData ? vturbData.passagem : 0,
+                    // VSL ANALYTICS: Soma de TODAS as VSLs do VTurb
+                    playsUnicosVSL: vturbTotals.visuUnicaVSL,  // Plays únicos (starts)
+                    visualizacaoPage: vturbTotals.visitas,     // Visualizações únicas (views)
+                    retencaoLeadVSL: vturbTotals.passagem,
+                    engajamentoVSL: vturbTotals.connectRate,
+                    retencaoPitchVSL: vturbTotals.passagem,
 
                     // MÉTRICAS CALCULADAS: Baseadas nos sistemas corretos
                     cpa: 0, // Será: gastoMetaAds / vendas
-                    ticketMedio: bankData?.aov || 0,
-                    ticketMedioTotal: bankData?.aov || 0,
+                    ticketMedio: bankTotals.vendas > 0 ? bankTotals.receita / bankTotals.vendas : 0,
+                    ticketMedioTotal: bankTotals.vendas > 0 ? bankTotals.receita / bankTotals.vendas : 0,
                     conversaoVSL: 0, // Será: vendas / plays quando tiver Meta Ads
-                    conversaocheckout: bankData?.convCheckout || 0,
-                    conversaoOrderBump: bankData?.convOB1 || 0,
+                    conversaocheckout: bankDataArray[0]?.convCheckout || 0,
+                    conversaoOrderBump: bankDataArray[0]?.convOB1 || 0,
                     conversaoBackredirect: 0,
-                    conversaoUpsell: bankData?.convUpsell1 || 0,
+                    conversaoUpsell: bankDataArray[0]?.convUpsell1 || 0,
                     conversaoDownsell: 0,
-                    conversaoUpsell2: bankData?.convUpsell2 || 0,
+                    conversaoUpsell2: bankDataArray[0]?.convUpsell2 || 0,
                 };
 
                 setMetrics(aggregatedMetrics);

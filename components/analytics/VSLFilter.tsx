@@ -141,8 +141,12 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
     }, [vslOptions, selectedVSL]);
 
     const displayOption = React.useMemo(() => {
+        // Se selectedVSL é undefined (não null), significa que nenhuma VSL foi selecionada ainda
+        if (selectedVSL === undefined) {
+            return { id: '', name: 'Selecione uma VSL', platform: '' };
+        }
         return selectedOption || { id: 'all', name: 'Todos os VSLs', platform: '' };
-    }, [selectedOption]);
+    }, [selectedOption, selectedVSL]);
 
     return (
         <div className="relative">

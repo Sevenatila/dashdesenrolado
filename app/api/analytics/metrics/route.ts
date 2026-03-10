@@ -43,11 +43,19 @@ export async function GET(request: NextRequest) {
                 console.log('[VTurb] Players encontrados:', players?.length || 0);
 
                 if (players && players.length > 0) {
-                    // Processar apenas a VSL específica que sabemos que tem dados
-                    const targetPlayer = players.find(p => p.id === "69921cdd92e29505e061e647");
-                    const playersToProcess = targetPlayer ? [targetPlayer] : players.slice(0, 2);
+                    // Se tiver filtro de VSL específica, processar apenas ela
+                    let playersToProcess = players;
 
-                    console.log(`[VTurb] Processando ${playersToProcess.length} players (foco na VSL principal)`);
+                    if (vslId && vslId !== 'all') {
+                        const specificPlayer = players.find(p => p.id === vslId);
+                        playersToProcess = specificPlayer ? [specificPlayer] : [];
+                    } else {
+                        // Processar todas as VSLs, mas com limite para evitar timeout
+                        // Limite de 10 VSLs por vez para garantir performance
+                        playersToProcess = players.slice(0, 10);
+                    }
+
+                    console.log(`[VTurb] Processando ${playersToProcess.length} players`);
 
                     for (const player of playersToProcess) {
                         console.log(`[VTurb] Buscando eventos do player: ${player.id} - ${player.name}`);
