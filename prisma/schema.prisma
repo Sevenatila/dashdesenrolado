@@ -129,3 +129,15 @@ model Settings {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model WebhookEvent {
+  id              String   @id @default(cuid())
+  idempotencyKey  String   @unique
+  eventType       String
+  entityId        String?   // invoice.id, subscription.id, etc
+  entityVersion   Int?      // version do objeto (invoice.version, subscription.version)
+  processedAt     DateTime @default(now())
+
+  @@index([entityId, entityVersion])
+  @@index([eventType])
+}
