@@ -97,7 +97,8 @@ export default function DashboardPage() {
                     visualizacaoPage: 0, // Meta Ads ou manual
 
                     // VSL ANALYTICS: APENAS do VTurb (o que você pediu)
-                    playsUnicosVSL: vturbData ? vturbData.visuUnicaVSL : 0,
+                    playsUnicosVSL: vturbData ? vturbData.visuUnicaVSL : 0,  // Plays únicos (starts)
+                    visualizacaoPage: vturbData ? vturbData.visitas : 0,     // Visualizações únicas (views)
                     retencaoLeadVSL: vturbData ? vturbData.passagem : 0,
                     engajamentoVSL: vturbData ? vturbData.connectRate : 0,
                     retencaoPitchVSL: vturbData ? vturbData.passagem : 0,
@@ -207,10 +208,10 @@ export default function DashboardPage() {
                 {/* Métricas VSL - APENAS analytics do VTurb */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <MetricCard
-                        title="Plays Únicos VSL"
-                        value={metrics?.playsUnicosVSL.toString() || "0"}
-                        icon={MonitorPlay}
-                        description="Analytics VTurb - Plays iniciados"
+                        title="Visualizações Únicas VSL"
+                        value={metrics?.visualizacaoPage.toString() || "0"}
+                        icon={Users}
+                        description="Analytics VTurb - Views totais"
                     />
                     <MetricCard
                         title="Connect Rate"
@@ -225,10 +226,10 @@ export default function DashboardPage() {
                         description="Analytics VTurb - Taxa de finalização"
                     />
                     <MetricCard
-                        title="Cliques no Link"
-                        value={metrics?.cliquesLink.toString() || "0"}
-                        icon={MousePointerClick}
-                        description="Meta Ads (a configurar)"
+                        title="Plays Únicos VSL"
+                        value={metrics?.playsUnicosVSL.toString() || "0"}
+                        icon={MonitorPlay}
+                        description="Analytics VTurb - Plays iniciados"
                     />
                 </div>
 
