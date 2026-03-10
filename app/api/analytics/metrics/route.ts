@@ -21,13 +21,19 @@ export async function GET(request: NextRequest) {
         const startDateParam = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const endDateParam = searchParams.get('endDate') || new Date().toISOString();
 
-        // ✅ CORREÇÃO: Usar datas exatas sem ajuste de timezone por enquanto
-        // TODO: Investigar timezone correto entre Hubla e banco
+        // ✅ CORREÇÃO: Usar timezone UTC-8 (mesmo da Hubla) para contar vendas
+        // Descoberto que Hubla usa timezone EUA West para contar vendas diárias
         const startDate = new Date(startDateParam);
         const endDate = new Date(endDateParam);
 
+        // Ajustar para timezone UTC-8 (igual à Hubla)
+        // Se recebemos 2026-03-10, queremos 2026-03-10T08:00:00.000Z até 2026-03-11T07:59:59.999Z
+        const hublaStartDate = new Date(startDate.toISOString().split('T')[0] + 'T08:00:00.000Z');
+        const hublaEndDate = new Date(endDate.toISOString().split('T')[0] + 'T07:59:59.999Z');
+        hublaEndDate.setDate(hublaEndDate.getDate() + 1); // Próximo dia
+
         console.log(`[Timezone] Original: ${startDateParam} to ${endDateParam}`);
-        console.log(`[Timezone] Adjusted: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+        console.log(`[Timezone] Hubla UTC-8: ${hublaStartDate.toISOString()} to ${hublaEndDate.toISOString()}`);
 
 
         // CÓDIGO REAL - BUSCAR DADOS REAIS
@@ -160,13 +166,12 @@ export async function GET(request: NextRequest) {
             console.log('[VTurb] VTURB_API_KEY não configurada no ambiente');
         }
 
-        // 2. SEMPRE buscar vendas diretamente do banco (sem depender de DailyPerformance)
-            // Buscar todas as vendas no período (usando datas ajustadas para timezone)
+        // 2. SEMPRE buscar vendas diretamente do banco (usando timezone Hubla UTC-8)
             const sales = await prisma.sale.findMany({
                 where: {
                     createdAt: {
-                        gte: startDate,  // Data ajustada para timezone
-                        lte: endDate     // Data ajustada para timezone
+                        gte: hublaStartDate,  // Data ajustada para timezone Hubla UTC-8
+                        lte: hublaEndDate     // Data ajustada para timezone Hubla UTC-8
                     },
                     platform: platform || undefined
                 },
@@ -175,7 +180,7 @@ export async function GET(request: NextRequest) {
                 }
             });
 
-            console.log(`[Sales] Encontradas ${sales.length} vendas no período ajustado de ${startDate.toISOString()} a ${endDate.toISOString()}`);
+            console.log(`[Sales] Encontradas ${sales.length} vendas no período Hubla de ${hublaStartDate.toISOString()} a ${hublaEndDate.toISOString()}`);
 
             // Agrupar vendas por data para criar métricas agregadas
             const salesByDate = new Map<string, typeof sales>();
