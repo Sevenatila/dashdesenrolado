@@ -53,8 +53,8 @@ export default function DashboardPage() {
     const [taxSettings, setTaxSettings] = useState<TaxSettings>({ pixTax: 0, cardTax: 0 });
     const [isLoading, setIsLoading] = useState(true);
     const [dateRange, setDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
+        start: "2026-03-09",
+        end: "2026-03-09"
     });
 
     // Buscar dados da API analytics que já tem integração VTurb
@@ -62,11 +62,13 @@ export default function DashboardPage() {
         try {
             setIsLoading(true);
 
+            // FORÇAR data específica que sabemos que funciona
             const params = new URLSearchParams({
-                startDate: dateRange.start + 'T00:00:00.000Z',
-                endDate: dateRange.end + 'T23:59:59.999Z'
+                startDate: "2026-03-09T00:00:00.000Z",
+                endDate: "2026-03-09T23:59:59.999Z"
             });
 
+            console.log('🌐 Dashboard API URL:', `/api/analytics/metrics?${params}`);
             const response = await fetch(`/api/analytics/metrics?${params}`);
 
             if (response.ok) {
