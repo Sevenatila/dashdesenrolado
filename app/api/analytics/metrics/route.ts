@@ -149,41 +149,78 @@ export async function GET(request: NextRequest) {
             console.log('[VTurb] VTURB_API_KEY não configurada no ambiente');
         }
 
-        // 2. SEMPRE buscar dados do banco (independente do VTurb)
-            const performances = await prisma.dailyPerformance.findMany({
+        // 2. SEMPRE buscar vendas diretamente do banco (sem depender de DailyPerformance)
+            // Buscar todas as vendas no período
+            const sales = await prisma.sale.findMany({
                 where: {
-                    date: {
+                    createdAt: {
                         gte: new Date(startDate),
                         lte: new Date(endDate)
-                    }
+                    },
+                    platform: platform || undefined
                 },
-                orderBy: {
-                    date: 'desc'
+                include: {
+                    items: true  // Incluir order bumps/upsells
                 }
             });
 
-            for (const perf of performances) {
-                // Buscar vendas do dia
-                const startOfDay = new Date(perf.date);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(perf.date);
-                endOfDay.setHours(23, 59, 59, 999);
+            console.log(`[Sales] Encontradas ${sales.length} vendas no período de ${startDate} a ${endDate}`);
 
-                const sales = await prisma.sale.findMany({
-                    where: {
-                        createdAt: {
-                            gte: startOfDay,
-                            lte: endOfDay
-                        },
-                        platform: platform || undefined
-                    }
-                });
+            // Agrupar vendas por data para criar métricas agregadas
+            const salesByDate = new Map<string, typeof sales>();
 
+            for (const sale of sales) {
+                const dateKey = new Date(sale.createdAt).toISOString().split('T')[0];
+                if (!salesByDate.has(dateKey)) {
+                    salesByDate.set(dateKey, []);
+                }
+                salesByDate.get(dateKey)?.push(sale);
+            }
+
+            // Se não houver vendas, criar uma métrica vazia para o período
+            if (sales.length === 0) {
+                const emptyMetric: DailyAnalytics = {
+                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
+                    vslId: vslId || 'all',
+                    vslName: 'Todos os VSLs',
+                    platform: platform || 'all',
+                    valorGasto: 0,
+                    cliques: 0,
+                    cpc: 0,
+                    visitas: 0,
+                    cpv: 0,
+                    connectRate: 0,
+                    passagem: 0,
+                    visuUnicaVSL: 0,
+                    cpvv: 0,
+                    iniciouCheckout: 0,
+                    convCheckout: 0,
+                    vendas: 0,
+                    aov: 0,
+                    cpa: 0,
+                    vendasOB1: 0,
+                    convOB1: 0,
+                    vendasOB2: 0,
+                    convOB2: 0,
+                    upsell1: 0,
+                    convUpsell1: 0,
+                    upsell2: 0,
+                    convUpsell2: 0,
+                    downsell: 0,
+                    observacoes: 'Sem vendas no período'
+                };
+                metrics.push(emptyMetric);
+            } else {
+                // Criar métricas agregadas para todas as vendas do período
                 const totalSales = sales.length;
                 const totalRevenue = sales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
+                const totalOrderBumps = sales.reduce((sum, sale) =>
+                    sum + sale.items.filter(item => item.type === 'ORDER_BUMP').length, 0);
+                const totalUpsells = sales.reduce((sum, sale) =>
+                    sum + sale.items.filter(item => item.type === 'UPSELL').length, 0);
 
                 const metric: DailyAnalytics = {
-                    date: perf.date,
+                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
                     vslId: vslId || 'all',
                     vslName: 'Todos os VSLs',
                     platform: platform || 'all',
@@ -197,31 +234,31 @@ export async function GET(request: NextRequest) {
                     connectRate: 0,
 
                     // Métricas de Engajamento
-                    passagem: perf.retencaoLeadVSL || 0,
-                    visuUnicaVSL: perf.playsUnicosVSL || 0,
+                    passagem: 0,
+                    visuUnicaVSL: 0,
                     cpvv: 0, // Meta Ads não integrado
 
                     // Métricas de Checkout
                     iniciouCheckout: 0,
-                    convCheckout: perf.conversaocheckout || 0,
+                    convCheckout: 0,
 
                     // Métricas de Vendas
                     vendas: totalSales,
-                    aov: totalSales > 0 ? totalRevenue / totalSales : perf.ticketMedio || 0,
+                    aov: totalSales > 0 ? totalRevenue / totalSales : 0,
                     cpa: 0, // Meta Ads não integrado
 
                     // Order Bumps e Upsells
-                    vendasOB1: 0,
-                    convOB1: perf.conversaoOrderBump || 0,
+                    vendasOB1: totalOrderBumps,
+                    convOB1: totalSales > 0 ? (totalOrderBumps / totalSales) * 100 : 0,
                     vendasOB2: 0,
                     convOB2: 0,
-                    upsell1: 0,
-                    convUpsell1: perf.conversaoUpsell || 0,
+                    upsell1: totalUpsells,
+                    convUpsell1: totalSales > 0 ? (totalUpsells / totalSales) * 100 : 0,
                     upsell2: 0,
-                    convUpsell2: perf.conversaoUpsell2 || 0,
+                    convUpsell2: 0,
                     downsell: 0,
 
-                    observacoes: ''
+                    observacoes: `${totalSales} vendas, ${totalOrderBumps} order bumps, ${totalUpsells} upsells`
                 };
 
                 metrics.push(metric);
