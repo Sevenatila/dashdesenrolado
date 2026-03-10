@@ -5,8 +5,8 @@ import { VSLOption } from "@/types/analytics";
 import { Video, ChevronDown, Check, Search } from "lucide-react";
 
 interface VSLFilterProps {
-    selectedVSL: string | null;
-    onVSLChange: (vslId: string | null) => void;
+    selectedVSL: string | null | undefined;
+    onVSLChange: (vslId: string | null | undefined) => void;
 }
 
 export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) {

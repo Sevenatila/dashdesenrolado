@@ -5,8 +5,8 @@ import { PlatformOption } from "@/types/analytics";
 import { ShoppingBag, ChevronDown, Check } from "lucide-react";
 
 interface PlatformFilterProps {
-    selectedPlatform: string | null;
-    onPlatformChange: (platform: string | null) => void;
+    selectedPlatform: string | null | undefined;
+    onPlatformChange: (platform: string | null | undefined) => void;
 }
 
 export default function PlatformFilter({ selectedPlatform, onPlatformChange }: PlatformFilterProps) {
