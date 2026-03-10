@@ -12,7 +12,9 @@ import {
     BarChart3,
     ArrowRightLeft,
     Percent,
-    RefreshCw
+    RefreshCw,
+    MousePointer,
+    Activity
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import SyncButton from "@/components/dashboard/SyncButton";
@@ -237,12 +239,28 @@ export default function DashboardPage() {
         );
     }
 
+    // Calcular sumário das métricas para os cards principais
+    const summary = metrics ? {
+        totalGasto: metrics.valorGasto,
+        totalCliques: metrics.cliquesLink,
+        totalVisitas: metrics.visualizacaoPage + metrics.playsUnicosVSL,
+        totalVendas: metrics.vendas,
+        totalReceita: metrics.receitaTotalLiquida,
+        cpcMedio: metrics.cliquesLink > 0 ? metrics.valorGasto / metrics.cliquesLink : 0,
+        cpvMedio: (metrics.visualizacaoPage + metrics.playsUnicosVSL) > 0 ? metrics.valorGasto / (metrics.visualizacaoPage + metrics.playsUnicosVSL) : 0,
+        cpaMedio: metrics.cpa,
+        aovMedio: metrics.ticketMedioTotal,
+        taxaConversaoGeral: (metrics.visualizacaoPage + metrics.playsUnicosVSL) > 0 ? (metrics.vendas / (metrics.visualizacaoPage + metrics.playsUnicosVSL)) * 100 : 0,
+        roi: metrics.valorGasto > 0 ? ((metrics.receitaTotalLiquida - metrics.valorGasto) / metrics.valorGasto) * 100 : 0,
+        roas: metrics.valorGasto > 0 ? metrics.receitaTotalLiquida / metrics.valorGasto : 0
+    } : null;
+
     return (
         <div className="space-y-8 pb-12">
             <div>
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Dashboard Unificado</h2>
                         <p className="text-sm text-gray-500">
                             {dateRange.start.toLocaleDateString('pt-BR')} até {dateRange.end.toLocaleDateString('pt-BR')}
                             {selectedVSL && selectedVSL !== 'all' && ' • VSL filtrada'}
@@ -273,170 +291,260 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Vendas de Produto Principal */}
-                    <MetricCard
-                        title="Número de Faturas"
-                        value={metrics?.vendas.toString() || "0"}
-                        icon={ShoppingCart}
-                        description="Total de faturas criadas durante o período"
-                    />
-                    <MetricCard
-                        title={hasTaxes ? "Receita Bruta Principal" : "Receita Produto Principal"}
-                        value={formatCurrency(metrics?.receitaGerada || 0)}
-                        icon={DollarSign}
-                        description="Receita apenas do produto principal"
-                    />
-                    <MetricCard
-                        title="Número de Itens nas Faturas"
-                        value={(metrics?.totalItens || metrics?.vendas || 0).toString()}
-                        icon={ShoppingCart}
-                        description="Vendas + Order Bumps + Upsells"
-                    />
-                    <MetricCard
-                        title={hasTaxes ? "Receita Total Bruta" : "Receita Total Líquida"}
-                        value={formatCurrency((metrics?.receitaTotalLiquida || metrics?.receitaGerada || 0))}
-                        icon={DollarSign}
-                        description="Principal + Order Bumps + Upsells"
-                    />
-                </div>
+                {/* Cards Principais de Resumo - Similar ao Analytics */}
+                {summary && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                        {/* Card ROI */}
+                        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium opacity-90">ROI</h3>
+                                <TrendingUp className="w-5 h-5 opacity-80" />
+                            </div>
+                            <p className="text-3xl font-bold">{summary.roi ? `${summary.roi.toFixed(1)}%` : '0%'}</p>
+                            <p className="text-sm opacity-80 mt-2">ROAS: {summary.roas ? summary.roas.toFixed(2) : '0.00'}x</p>
+                        </div>
 
-                {/* Métricas VSL - APENAS analytics do VTurb */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <MetricCard
-                        title="Views Únicos VSL"
-                        value="0"
-                        icon={Users}
-                        description="Analytics VTurb - Views únicos da VSL (aguardando implementação)"
-                    />
-                    <MetricCard
-                        title="Connect Rate"
-                        value={`${metrics?.engajamentoVSL.toFixed(1) || 0}%`}
-                        icon={Target}
-                        description="Analytics VTurb - Plays/Views"
-                    />
-                    <MetricCard
-                        title="Retenção VSL"
-                        value={`${metrics?.retencaoLeadVSL.toFixed(1) || 0}%`}
-                        icon={Percent}
-                        description="Analytics VTurb - Taxa de finalização"
-                    />
-                    <MetricCard
-                        title="Plays Únicos VSL"
-                        value={metrics?.playsUnicosVSL.toString() || "0"}
-                        icon={MonitorPlay}
-                        description="Analytics VTurb - Plays únicos iniciados"
-                    />
-                </div>
+                        {/* Card Receita */}
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium opacity-90">Receita Total</h3>
+                                <DollarSign className="w-5 h-5 opacity-80" />
+                            </div>
+                            <p className="text-3xl font-bold">{formatCurrency(summary.totalReceita)}</p>
+                            <p className="text-sm opacity-80 mt-2">AOV: {formatCurrency(summary.aovMedio)}</p>
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Métricas de Tráfego - Facebook/Meta Ads (aguardando integração) */}
-                    <MetricCard
-                        title="Visualizações de Página"
-                        value="0"
-                        icon={Users}
-                        description="Facebook Ads - Visualizações do site (aguardando integração)"
-                    />
-                    <MetricCard
-                        title="Cliques no Link"
-                        value="0"
-                        icon={MousePointerClick}
-                        description="Facebook Ads - Cliques do anúncio para o site (aguardando)"
-                    />
-                    <MetricCard
-                        title="CPC Médio"
-                        value="R$ 0,00"
-                        icon={Target}
-                        description="Facebook Ads - Custo por clique (aguardando)"
-                    />
-                    <MetricCard
-                        title="CPV Médio"
-                        value="R$ 0,00"
-                        icon={BarChart3}
-                        description="Facebook Ads - Custo por visualização (aguardando)"
-                    />
-                </div>
+                        {/* Card Vendas */}
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium opacity-90">Vendas</h3>
+                                <ShoppingCart className="w-5 h-5 opacity-80" />
+                            </div>
+                            <p className="text-3xl font-bold">{summary.totalVendas}</p>
+                            <p className="text-sm opacity-80 mt-2">Conv: {summary.taxaConversaoGeral.toFixed(2)}%</p>
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Métricas Complementares de Vendas */}
-                    <MetricCard
-                        title="Ticket Médio Principal"
-                        value={formatCurrency(metrics?.ticketMedio || 0)}
-                        icon={BarChart3}
-                        description="Receita Principal / Faturas"
-                    />
-                    <MetricCard
-                        title="Ticket Médio Total"
-                        value={formatCurrency((metrics?.ticketMedioTotal || metrics?.ticketMedio || 0))}
-                        icon={BarChart3}
-                        description="Receita Total / Faturas"
-                    />
-                    <MetricCard
-                        title="Valor Gasto"
-                        value={formatCurrency(metrics?.valorGasto || 0)}
-                        icon={TrendingUp}
-                        description="Meta Ads"
-                    />
-                    <MetricCard
-                        title="CPA Total"
-                        value={formatCurrency(metrics?.cpa || 0)}
-                        icon={Target}
-                        description="Gasto / Vendas"
-                    />
-                </div>
+                        {/* Card Tráfego */}
+                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl text-white">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium opacity-90">Cliques</h3>
+                                <MousePointer className="w-5 h-5 opacity-80" />
+                            </div>
+                            <p className="text-3xl font-bold">{summary.totalCliques.toLocaleString("pt-BR")}</p>
+                            <p className="text-sm opacity-80 mt-2">CPC: {formatCurrency(summary.cpcMedio)}</p>
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Tráfego (Meta Ads - futuro) */}
-                    <MetricCard
-                        title="Visualizações da Página"
-                        value={metrics?.visualizacaoPage.toString() || "0"}
-                        icon={Users}
-                        description="Meta Ads (a configurar)"
-                    />
-                    <MetricCard
-                        title="Conversão VSL"
-                        value={`${metrics?.conversaoVSL || 0}%`}
-                        icon={Percent}
-                        description="Vendas / Plays (será calculado)"
-                    />
-                </div>
+                        {/* Card Gasto */}
+                        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-xl text-white">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium opacity-90">Investimento</h3>
+                                <Activity className="w-5 h-5 opacity-80" />
+                            </div>
+                            <p className="text-3xl font-bold">{formatCurrency(summary.totalGasto)}</p>
+                            <p className="text-sm opacity-80 mt-2">CPA: {formatCurrency(summary.cpaMedio)}</p>
+                        </div>
+                    </div>
+                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Taxas de Conversão e Funil */}
-                    <MetricCard
-                        title="Conv. Checkout"
-                        value={`${metrics?.conversaocheckout || 0}%`}
-                        icon={Percent}
-                        description="Vendas / Clicks Botão"
-                    />
-                    <MetricCard
-                        title="Conv. Order Bump"
-                        value={`${metrics?.conversaoOrderBump || 0}%`}
-                        icon={ArrowRightLeft}
-                    />
-                    <MetricCard
-                        title="Conv. Backredirect"
-                        value={`${metrics?.conversaoBackredirect || 0}%`}
-                        icon={ArrowRightLeft}
-                    />
-                    <MetricCard
-                        title="Conv. Upsell 1"
-                        value={`${metrics?.conversaoUpsell || 0}%`}
-                        icon={ArrowRightLeft}
-                    />
-                </div>
+                {/* Mini Cards de Conversão - Similar ao Analytics */}
+                {metrics && (
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Checkout</p>
+                            <p className="text-xl font-bold text-gray-900">{metrics.conversaocheckout.toFixed(1)}%</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Order Bump</p>
+                            <p className="text-xl font-bold text-gray-900">{metrics.conversaoOrderBump.toFixed(1)}%</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Upsell 1</p>
+                            <p className="text-xl font-bold text-gray-900">{metrics.conversaoUpsell.toFixed(1)}%</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Upsell 2</p>
+                            <p className="text-xl font-bold text-gray-900">{metrics.conversaoUpsell2.toFixed(1)}%</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">CPV Médio</p>
+                            <p className="text-xl font-bold text-gray-900">{summary ? formatCurrency(summary.cpvMedio) : 'R$ 0,00'}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Retenção VSL</p>
+                            <p className="text-xl font-bold text-gray-900">{metrics.retencaoLeadVSL.toFixed(1)}%</p>
+                        </div>
+                    </div>
+                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard
-                        title="Conv. Downsell"
-                        value={`${metrics?.conversaoDownsell || 0}%`}
-                        icon={ArrowRightLeft}
-                    />
-                    <MetricCard
-                        title="Conv. Upsell 2"
-                        value={`${metrics?.conversaoUpsell2 || 0}%`}
-                        icon={ArrowRightLeft}
-                    />
+                {/* Seção de Métricas Detalhadas */}
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Métricas Detalhadas</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Vendas de Produto Principal */}
+                        <MetricCard
+                            title="Número de Faturas"
+                            value={metrics?.vendas.toString() || "0"}
+                            icon={ShoppingCart}
+                            description="Total de faturas criadas durante o período"
+                        />
+                        <MetricCard
+                            title={hasTaxes ? "Receita Bruta Principal" : "Receita Produto Principal"}
+                            value={formatCurrency(metrics?.receitaGerada || 0)}
+                            icon={DollarSign}
+                            description="Receita apenas do produto principal"
+                        />
+                        <MetricCard
+                            title="Número de Itens nas Faturas"
+                            value={(metrics?.totalItens || metrics?.vendas || 0).toString()}
+                            icon={ShoppingCart}
+                            description="Vendas + Order Bumps + Upsells"
+                        />
+                        <MetricCard
+                            title={hasTaxes ? "Receita Total Bruta" : "Receita Total Líquida"}
+                            value={formatCurrency((metrics?.receitaTotalLiquida || metrics?.receitaGerada || 0))}
+                            icon={DollarSign}
+                            description="Principal + Order Bumps + Upsells"
+                        />
+                    </div>
+
+                    {/* Métricas VSL - APENAS analytics do VTurb */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <MetricCard
+                            title="Views Únicos VSL"
+                            value="0"
+                            icon={Users}
+                            description="Analytics VTurb - Views únicos da VSL (aguardando implementação)"
+                        />
+                        <MetricCard
+                            title="Connect Rate"
+                            value={`${metrics?.engajamentoVSL.toFixed(1) || 0}%`}
+                            icon={Target}
+                            description="Analytics VTurb - Plays/Views"
+                        />
+                        <MetricCard
+                            title="Retenção VSL"
+                            value={`${metrics?.retencaoLeadVSL.toFixed(1) || 0}%`}
+                            icon={Percent}
+                            description="Analytics VTurb - Taxa de finalização"
+                        />
+                        <MetricCard
+                            title="Plays Únicos VSL"
+                            value={metrics?.playsUnicosVSL.toString() || "0"}
+                            icon={MonitorPlay}
+                            description="Analytics VTurb - Plays únicos iniciados"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Métricas de Tráfego - Facebook/Meta Ads (aguardando integração) */}
+                        <MetricCard
+                            title="Visualizações de Página"
+                            value="0"
+                            icon={Users}
+                            description="Facebook Ads - Visualizações do site (aguardando integração)"
+                        />
+                        <MetricCard
+                            title="Cliques no Link"
+                            value="0"
+                            icon={MousePointerClick}
+                            description="Facebook Ads - Cliques do anúncio para o site (aguardando)"
+                        />
+                        <MetricCard
+                            title="CPC Médio"
+                            value="R$ 0,00"
+                            icon={Target}
+                            description="Facebook Ads - Custo por clique (aguardando)"
+                        />
+                        <MetricCard
+                            title="CPV Médio"
+                            value="R$ 0,00"
+                            icon={BarChart3}
+                            description="Facebook Ads - Custo por visualização (aguardando)"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Métricas Complementares de Vendas */}
+                        <MetricCard
+                            title="Ticket Médio Principal"
+                            value={formatCurrency(metrics?.ticketMedio || 0)}
+                            icon={BarChart3}
+                            description="Receita Principal / Faturas"
+                        />
+                        <MetricCard
+                            title="Ticket Médio Total"
+                            value={formatCurrency((metrics?.ticketMedioTotal || metrics?.ticketMedio || 0))}
+                            icon={BarChart3}
+                            description="Receita Total / Faturas"
+                        />
+                        <MetricCard
+                            title="Valor Gasto"
+                            value={formatCurrency(metrics?.valorGasto || 0)}
+                            icon={TrendingUp}
+                            description="Meta Ads"
+                        />
+                        <MetricCard
+                            title="CPA Total"
+                            value={formatCurrency(metrics?.cpa || 0)}
+                            icon={Target}
+                            description="Gasto / Vendas"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Tráfego (Meta Ads - futuro) */}
+                        <MetricCard
+                            title="Visualizações da Página"
+                            value={metrics?.visualizacaoPage.toString() || "0"}
+                            icon={Users}
+                            description="Meta Ads (a configurar)"
+                        />
+                        <MetricCard
+                            title="Conversão VSL"
+                            value={`${metrics?.conversaoVSL || 0}%`}
+                            icon={Percent}
+                            description="Vendas / Plays (será calculado)"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Taxas de Conversão e Funil */}
+                        <MetricCard
+                            title="Conv. Checkout"
+                            value={`${metrics?.conversaocheckout || 0}%`}
+                            icon={Percent}
+                            description="Vendas / Clicks Botão"
+                        />
+                        <MetricCard
+                            title="Conv. Order Bump"
+                            value={`${metrics?.conversaoOrderBump || 0}%`}
+                            icon={ArrowRightLeft}
+                        />
+                        <MetricCard
+                            title="Conv. Backredirect"
+                            value={`${metrics?.conversaoBackredirect || 0}%`}
+                            icon={ArrowRightLeft}
+                        />
+                        <MetricCard
+                            title="Conv. Upsell 1"
+                            value={`${metrics?.conversaoUpsell || 0}%`}
+                            icon={ArrowRightLeft}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <MetricCard
+                            title="Conv. Downsell"
+                            value={`${metrics?.conversaoDownsell || 0}%`}
+                            icon={ArrowRightLeft}
+                        />
+                        <MetricCard
+                            title="Conv. Upsell 2"
+                            value={`${metrics?.conversaoUpsell2 || 0}%`}
+                            icon={ArrowRightLeft}
+                        />
+                    </div>
                 </div>
             </div>
 
