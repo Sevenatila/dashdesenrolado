@@ -277,18 +277,20 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // 1. Verificar IP do remetente
+    // 1. Verificar IP do remetente (TEMPORARIAMENTE DESABILITADO)
     const clientIP = request.headers.get('x-forwarded-for') ||
                     request.headers.get('x-real-ip') ||
                     'unknown';
 
-    if (!isAllowedIP(clientIP)) {
-      console.error(`[Hubla] ❌ IP não autorizado: ${clientIP}`);
-      return NextResponse.json(
-        { error: 'IP not allowed' },
-        { status: 403 }
-      );
-    }
+    // TODO: Reativar quando tivermos os IPs oficiais da Hubla
+    // if (!isAllowedIP(clientIP)) {
+    //   console.error(`[Hubla] ❌ IP não autorizado: ${clientIP}`);
+    //   return NextResponse.json(
+    //     { error: 'IP not allowed' },
+    //     { status: 403 }
+    //   );
+    // }
+    console.log(`[Hubla] 📡 Webhook recebido do IP: ${clientIP} (validação de IP desabilitada)`);
 
     // 2. Verificar autenticação via token
     const hublaToken = request.headers.get('x-hubla-token');
@@ -395,10 +397,11 @@ export async function GET() {
     security: {
       token_auth: true, // Reativado com token correto
       token_configured: !!process.env.HUBLA_WEBHOOK_TOKEN || !!process.env.HUBLA_WEBHOOK_SECRET,
-      ip_filtering: process.env.NODE_ENV !== 'development',
+      ip_filtering: false, // Temporariamente desabilitado
       idempotency: true,
       version_control: true,
       async_processing: true
-    }
+    },
+    note: "IP filtering temporarily disabled - only token authentication active"
   });
 }
