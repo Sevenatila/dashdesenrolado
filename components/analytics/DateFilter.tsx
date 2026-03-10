@@ -179,7 +179,7 @@ export default function DateFilter({ dateRange, onDateRangeChange }: DateFilterP
                                     value={dateRange.start.toISOString().split('T')[0]}
                                     onChange={(e) => handleCustomDateChange('start', e.target.value)}
                                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    max={dateRange.end.toISOString().split('T')[0]}
+                                    max={new Date().toISOString().split('T')[0]}
                                 />
                             </div>
 
