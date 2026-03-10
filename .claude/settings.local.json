@@ -86,7 +86,8 @@
       "Bash(node scripts/test-api-hoje.js)",
       "Bash(node scripts/check-order-bumps.js)",
       "Bash(node scripts/analyze-hubla-structure.js)",
-      "Bash(git commit -m \"feat: separar corretamente métricas Facebook vs VTurb\n\n- Removido mapeamento incorreto de ''Visualizações de Página'' do VTurb\n- Adicionado campo viewsUnicosVSL específico para views únicos da VSL\n- Visualizações de Página agora fica em aberto para Facebook/Meta Ads\n- Separação clara: VTurb = analytics da VSL, Facebook = tráfego do site\n- Dashboard reorganizado com seções específicas para cada fonte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"feat: separar corretamente métricas Facebook vs VTurb\n\n- Removido mapeamento incorreto de ''Visualizações de Página'' do VTurb\n- Adicionado campo viewsUnicosVSL específico para views únicos da VSL\n- Visualizações de Página agora fica em aberto para Facebook/Meta Ads\n- Separação clara: VTurb = analytics da VSL, Facebook = tráfego do site\n- Dashboard reorganizado com seções específicas para cada fonte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git commit -m \"fix: corrigir erro de escopo vturbTotals no Dashboard\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

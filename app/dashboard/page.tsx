@@ -305,9 +305,9 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <MetricCard
                         title="Views Únicos VSL"
-                        value={vturbTotals.viewsUnicosVSL?.toString() || "0"}
+                        value="0"
                         icon={Users}
-                        description="Analytics VTurb - Views únicos da VSL por sessão"
+                        description="Analytics VTurb - Views únicos da VSL (aguardando implementação)"
                     />
                     <MetricCard
                         title="Connect Rate"
