@@ -290,17 +290,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Verificar autenticação via token (TEMPORARIAMENTE DESABILITADO)
+    // 2. Verificar autenticação via token
     const hublaToken = request.headers.get('x-hubla-token');
-    // TODO: Reativar após configurar token na Hubla
-    // if (!verifyHublaToken(hublaToken)) {
-    //   console.error(`[Hubla] ❌ Token inválido ou ausente`);
-    //   return NextResponse.json(
-    //     { error: 'Invalid or missing authentication token' },
-    //     { status: 401 }
-    //   );
-    // }
-    console.log(`[Hubla] ⚠️ Autenticação temporariamente desabilitada - Token recebido: ${hublaToken ? 'Sim' : 'Não'}`);
+    if (!verifyHublaToken(hublaToken)) {
+      console.error(`[Hubla] ❌ Token inválido ou ausente - Esperado: ${process.env.HUBLA_WEBHOOK_TOKEN}, Recebido: ${hublaToken}`);
+      return NextResponse.json(
+        { error: 'Invalid or missing authentication token' },
+        { status: 401 }
+      );
+    }
+    console.log(`[Hubla] ✅ Token válido - autenticação bem-sucedida`);
 
     // 3. Verificar idempotência ANTES de processar
     const idempotencyKey = request.headers.get('x-hubla-idempotency');
@@ -394,13 +393,12 @@ export async function GET() {
     message: 'Hubla webhook endpoint is active (v2.0)',
     timestamp: new Date().toISOString(),
     security: {
-      token_auth: false, // Temporariamente desabilitado
+      token_auth: true, // Reativado com token correto
       token_configured: !!process.env.HUBLA_WEBHOOK_TOKEN || !!process.env.HUBLA_WEBHOOK_SECRET,
       ip_filtering: process.env.NODE_ENV !== 'development',
       idempotency: true,
       version_control: true,
       async_processing: true
-    },
-    note: "Token authentication temporarily disabled for testing"
+    }
   });
 }
