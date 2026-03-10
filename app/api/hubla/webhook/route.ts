@@ -36,24 +36,28 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
         }
 
 
-        // Identificar se é order bump/upsell pela ausência de groupName ou groupName vazio
-        const isOrderBump = eventType === 'NewSale' &&
-                           (!eventData.groupName || eventData.groupName.trim() === '');
+        // ✅ CORREÇÃO: Identificar order bump pelo padrão -offer- no externalId
+        const isOrderBump = invoiceId && invoiceId.includes('-offer-');
+
+        console.log(`[Hubla] Processing transaction: ${invoiceId}, isOrderBump: ${isOrderBump}, amount: ${amount}, email: ${email}`);
 
         if (isOrderBump) {
+          // ✅ CORREÇÃO: Extrair ID da venda principal do externalId
+          const mainSaleId = invoiceId.replace(/-offer-\d+$/, '');
+          console.log(`[Hubla] Order bump detected. Main sale ID: ${mainSaleId}`);
 
-          // Buscar venda principal pelo mesmo usuário mais recente (que tenha groupName preenchido)
+          // Buscar venda principal pelo externalId correspondente
           const mainSale = await prisma.sale.findFirst({
             where: {
               platform: 'HUBLA',
-              customerEmail: email,
-              // Buscar apenas vendas principais (que não são order bumps)
-              customerName: { not: null }
-            },
-            orderBy: { createdAt: 'desc' }
+              externalId: mainSaleId,
+              customerEmail: email
+            }
           });
 
           if (mainSale) {
+            console.log(`[Hubla] ✅ Main sale found: ${mainSale.externalId}`);
+
             // Verificar se order bump já existe
             const existingItem = await prisma.saleItem.findFirst({
               where: {
@@ -76,16 +80,20 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
                     : (eventData.invoice?.createdAt ? new Date(eventData.invoice.createdAt) : new Date())
                 }
               });
-
+              console.log(`[Hubla] ✅ Order bump saved as SaleItem: ${invoiceId}`);
+            } else {
+              console.log(`[Hubla] ⚠️  Order bump already exists: ${invoiceId}`);
             }
           } else {
-            console.error(`Main sale not found for order bump - customer: ${email}`);
+            console.error(`[Hubla] ❌ Main sale not found for order bump ${invoiceId} - customer: ${email} - expected main ID: ${mainSaleId}`);
             throw new Error('Main sale not found for order bump');
           }
           return;
         }
 
         if (invoiceId && amount) {
+          console.log(`[Hubla] Processing main sale: ${invoiceId}`);
+
           // Verificar se já existe
           const existing = await prisma.sale.findFirst({
             where: { externalId: invoiceId }
@@ -120,6 +128,7 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
               }
             });
 
+            console.log(`[Hubla] ✅ Main sale created: ${invoiceId} - R$ ${amount}`);
 
             // Atualizar métricas diárias
             const date = eventType === 'NewSale'
@@ -140,7 +149,11 @@ async function processHublaV2Event(webhookData: any): Promise<void> {
                 receitaGerada: amount
               }
             });
+          } else {
+            console.log(`[Hubla] ⚠️  Sale already exists: ${invoiceId}`);
           }
+        } else {
+          console.error(`[Hubla] ❌ Missing invoiceId or amount - invoiceId: ${invoiceId}, amount: ${amount}`);
         }
         break;
 

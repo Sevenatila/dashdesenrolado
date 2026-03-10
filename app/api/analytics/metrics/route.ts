@@ -18,8 +18,19 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams;
         const vslId = searchParams.get('vslId');
         const platform = searchParams.get('platform');
-        const startDate = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        const endDate = searchParams.get('endDate') || new Date().toISOString();
+        const startDateParam = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const endDateParam = searchParams.get('endDate') || new Date().toISOString();
+
+        // ✅ CORREÇÃO DE TIMEZONE: Ajustar datas para compensar diferença de fuso
+        // Problema: vendas do dia X na Hubla aparecem como X+1 no banco
+        const startDate = new Date(startDateParam);
+        startDate.setHours(startDate.getHours() - 3); // Retroceder 3h para capturar início do dia
+
+        const endDate = new Date(endDateParam);
+        endDate.setHours(endDate.getHours() + 21); // Avançar 21h para cobrir todo o dia seguinte
+
+        console.log(`[Timezone] Original: ${startDateParam} to ${endDateParam}`);
+        console.log(`[Timezone] Adjusted: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
 
         // CÓDIGO REAL - BUSCAR DADOS REAIS
@@ -63,8 +74,8 @@ export async function GET(request: NextRequest) {
                         try {
                             const eventsPromise = vturb.getSessionStats(
                                 player.id,
-                                startDate.split('T')[0],
-                                endDate.split('T')[0]
+                                startDateParam.split('T')[0], // Usar data original para VTurb
+                                endDateParam.split('T')[0]   // VTurb não tem problema de timezone
                             );
 
                             const sessionStats = await Promise.race([
@@ -85,12 +96,12 @@ export async function GET(request: NextRequest) {
                                 const totalRevenue = sessionStats.total_amount_brl || 0;
 
                                 // Criar uma métrica única para todo o período
-                                const dateRange = `${startDate.split('T')[0]} a ${endDate.split('T')[0]}`;
+                                const dateRange = `${startDateParam.split('T')[0]} a ${endDateParam.split('T')[0]}`;
 
                                 console.log(`[VTurb] Player ${player.name} - Views: ${totalViews}, Views Únicas: ${totalViewsUnique}, Starts: ${totalStarts}, Starts Únicos: ${totalStartsUnique}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`);
 
                                 const vturbMetric: DailyAnalytics = {
-                                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
+                                    date: new Date(endDateParam.split('T')[0] + 'T00:00:00'),
                                     vslId: player.id,
                                     vslName: player.name || 'VSL VTurb',
                                     platform: 'vturb',
@@ -153,12 +164,12 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. SEMPRE buscar vendas diretamente do banco (sem depender de DailyPerformance)
-            // Buscar todas as vendas no período
+            // Buscar todas as vendas no período (usando datas ajustadas para timezone)
             const sales = await prisma.sale.findMany({
                 where: {
                     createdAt: {
-                        gte: new Date(startDate),
-                        lte: new Date(endDate)
+                        gte: startDate,  // Data ajustada para timezone
+                        lte: endDate     // Data ajustada para timezone
                     },
                     platform: platform || undefined
                 },
@@ -167,7 +178,7 @@ export async function GET(request: NextRequest) {
                 }
             });
 
-            console.log(`[Sales] Encontradas ${sales.length} vendas no período de ${startDate} a ${endDate}`);
+            console.log(`[Sales] Encontradas ${sales.length} vendas no período ajustado de ${startDate.toISOString()} a ${endDate.toISOString()}`);
 
             // Agrupar vendas por data para criar métricas agregadas
             const salesByDate = new Map<string, typeof sales>();
@@ -183,7 +194,7 @@ export async function GET(request: NextRequest) {
             // Se não houver vendas, criar uma métrica vazia para o período
             if (sales.length === 0) {
                 const emptyMetric: DailyAnalytics = {
-                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
+                    date: new Date(endDateParam.split('T')[0] + 'T00:00:00'),
                     vslId: vslId || 'all',
                     vslName: 'Todos os VSLs',
                     platform: platform || 'all',
@@ -214,16 +225,24 @@ export async function GET(request: NextRequest) {
                 };
                 metrics.push(emptyMetric);
             } else {
-                // Criar métricas agregadas para todas as vendas do período
-                const totalSales = sales.length;
-                const totalRevenue = sales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
+                // ✅ CORREÇÃO: Separar vendas principais de order bumps
+                const mainSales = sales.filter(sale => !sale.externalId.includes('-offer-'));
+                const orderBumpSales = sales.filter(sale => sale.externalId.includes('-offer-'));
+
+                console.log(`[Sales] Total records: ${sales.length}, Main sales: ${mainSales.length}, Order bumps as Sales: ${orderBumpSales.length}`);
+
+                // Calcular métricas apenas das vendas principais
+                const totalSales = mainSales.length;
+                const totalRevenue = mainSales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
+
+                // Order bumps via SaleItem (método correto)
                 const totalOrderBumps = sales.reduce((sum, sale) =>
                     sum + sale.items.filter(item => item.type === 'ORDER_BUMP').length, 0);
                 const totalUpsells = sales.reduce((sum, sale) =>
                     sum + sale.items.filter(item => item.type === 'UPSELL').length, 0);
 
                 const metric: DailyAnalytics = {
-                    date: new Date(endDate.split('T')[0] + 'T00:00:00'),
+                    date: new Date(endDateParam.split('T')[0] + 'T00:00:00'),
                     vslId: vslId || 'all',
                     vslName: 'Todos os VSLs',
                     platform: platform || 'all',
@@ -261,7 +280,7 @@ export async function GET(request: NextRequest) {
                     convUpsell2: 0,
                     downsell: 0,
 
-                    observacoes: `${totalSales} vendas, ${totalOrderBumps} order bumps, ${totalUpsells} upsells`
+                    observacoes: `${totalSales} vendas principais (${orderBumpSales.length} order bumps como Sales + ${totalOrderBumps} como SaleItem)`
                 };
 
                 metrics.push(metric);
