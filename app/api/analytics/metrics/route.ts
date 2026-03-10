@@ -95,18 +95,21 @@ export async function GET(request: NextRequest) {
                                     vslName: player.name || 'VSL VTurb',
                                     platform: 'vturb',
 
-                                    // Métricas de Tráfego
+                                    // Métricas de Tráfego (Facebook/Meta Ads)
                                     valorGasto: 0,
                                     cliques: 0,
                                     cpc: 0,
-                                    visitas: totalViewsUnique, // Visualizações ÚNICAS do VTurb (não total)
+                                    visitas: 0, // Visualizações de PÁGINA (Facebook) - não é do VTurb
                                     cpv: 0,
                                     connectRate: totalViewsUnique > 0 && totalStartsUnique > 0 ? (totalStartsUnique / totalViewsUnique) * 100 : 0,
 
-                                    // Métricas de Engajamento
+                                    // Métricas de Engajamento VSL (VTurb)
                                     passagem: totalStartsUnique > 0 && totalFinished > 0 ? (totalFinished / totalStartsUnique) * 100 : 0,
-                                    visuUnicaVSL: totalStartsUnique, // Plays ÚNICOS (não total)
-                                    cpvv: 0,
+                                    visuUnicaVSL: totalStartsUnique, // Plays ÚNICOS da VSL (VTurb)
+                                    cpvv: 0, // Custo por view da VSL (quando tiver Facebook integrado)
+
+                                    // Nova métrica: Views únicos da VSL (diferente de visualizações de página)
+                                    viewsUnicosVSL: totalViewsUnique, // Views únicos da VSL (VTurb)
 
                                     // Métricas de Checkout
                                     iniciouCheckout: 0,

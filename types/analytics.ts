@@ -14,7 +14,8 @@ export interface DailyAnalytics {
 
     // Métricas de Engajamento
     passagem: number; // % Passagem
-    visuUnicaVSL: number; // Visualizações Únicas VSL
+    visuUnicaVSL: number; // Plays Únicos da VSL (VTurb)
+    viewsUnicosVSL?: number; // Views Únicos da VSL (VTurb) - diferente de visitas do site
     cpvv: number; // Custo Por Visualização VSL
 
     // Métricas de Checkout

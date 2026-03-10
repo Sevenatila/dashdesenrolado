@@ -80,7 +80,13 @@
       "Bash(git commit -m \"fix: corrigir m\\u00e9tricas VTurb para usar visualiza\\u00e7\\u00f5es \\u00fanicas\n\n- API agora usa total_viewed_session_uniq para visualiza\\u00e7\\u00f5es \\u00fanicas\n- Plays \\u00fanicos usando total_started_session_uniq \n- Connect rate e reten\\u00e7\\u00e3o calculados com valores \\u00fanicos\n- Descri\\u00e7\\u00f5es dos cards atualizadas para refletir dados corretos\n- Antes: usava total_viewed (276 views totais)\n- Agora: usa total_viewed_session_uniq (274 views \\u00fanicas)\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(node scripts/check-sales.js)",
       "Bash(curl -s \"http://localhost:3000/api/analytics/metrics?startDate=2026-03-10T00:00:00.000Z&endDate=2026-03-10T23:59:59.999Z\")",
-      "Bash(git commit -m \"fix: corrigir busca de vendas no banco de dados\n\n- API agora busca vendas diretamente da tabela ''sale''\n- Não depende mais de DailyPerformance (que pode estar vazio)\n- Inclui order bumps e upsells nas métricas\n- Confirmado: 152 vendas no banco, 39 vendas hoje\n- Dashboard agora mostrará vendas corretamente\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"fix: corrigir busca de vendas no banco de dados\n\n- API agora busca vendas diretamente da tabela ''sale''\n- Não depende mais de DailyPerformance (que pode estar vazio)\n- Inclui order bumps e upsells nas métricas\n- Confirmado: 152 vendas no banco, 39 vendas hoje\n- Dashboard agora mostrará vendas corretamente\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(node scripts/check-hubla-sales.js)",
+      "Bash(curl -s \"https://dashdesenrolado.vercel.app/api/hubla/webhook\")",
+      "Bash(node scripts/test-api-hoje.js)",
+      "Bash(node scripts/check-order-bumps.js)",
+      "Bash(node scripts/analyze-hubla-structure.js)",
+      "Bash(git commit -m \"feat: separar corretamente métricas Facebook vs VTurb\n\n- Removido mapeamento incorreto de ''Visualizações de Página'' do VTurb\n- Adicionado campo viewsUnicosVSL específico para views únicos da VSL\n- Visualizações de Página agora fica em aberto para Facebook/Meta Ads\n- Separação clara: VTurb = analytics da VSL, Facebook = tráfego do site\n- Dashboard reorganizado com seções específicas para cada fonte\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

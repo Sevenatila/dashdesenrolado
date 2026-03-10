@@ -115,8 +115,8 @@ export default function DashboardPage() {
 
                 // AGREGAR dados de múltiplas VSLs do VTurb
                 let vturbTotals = {
-                    visitas: 0,
-                    visuUnicaVSL: 0,
+                    viewsUnicosVSL: 0, // Views únicos da VSL (VTurb)
+                    visuUnicaVSL: 0,   // Plays únicos da VSL (VTurb)
                     passagem: 0,
                     connectRate: 0,
                     vendas: 0,
@@ -126,7 +126,7 @@ export default function DashboardPage() {
                 if (vturbDataArray.length > 0) {
                     // Somar todas as métricas das VSLs
                     vturbTotals = vturbDataArray.reduce((acc, vsl) => ({
-                        visitas: acc.visitas + (vsl.visitas || 0),
+                        viewsUnicosVSL: acc.viewsUnicosVSL + (vsl.viewsUnicosVSL || 0),
                         visuUnicaVSL: acc.visuUnicaVSL + (vsl.visuUnicaVSL || 0),
                         passagem: acc.passagem + (vsl.passagem || 0), // Média ponderada seria melhor
                         connectRate: acc.connectRate + (vsl.connectRate || 0), // Média ponderada seria melhor
@@ -142,8 +142,8 @@ export default function DashboardPage() {
 
                     console.log('🔥 TOTAIS AGREGADOS VTURB:');
                     console.log('   - Total VSLs processadas:', vturbDataArray.length);
-                    console.log('   - visitas (views):', vturbTotals.visitas);
-                    console.log('   - visuUnicaVSL (plays):', vturbTotals.visuUnicaVSL);
+                    console.log('   - viewsUnicosVSL (views únicos da VSL):', vturbTotals.viewsUnicosVSL);
+                    console.log('   - visuUnicaVSL (plays únicos da VSL):', vturbTotals.visuUnicaVSL);
                     console.log('   - passagem (retenção média):', vturbTotals.passagem);
                     console.log('   - connectRate (média):', vturbTotals.connectRate);
                 }
@@ -168,8 +168,8 @@ export default function DashboardPage() {
                     cliquesLink: 0, // Meta Ads
 
                     // VSL ANALYTICS: Soma de TODAS as VSLs do VTurb
-                    playsUnicosVSL: vturbTotals.visuUnicaVSL,  // Plays únicos (starts)
-                    visualizacaoPage: vturbTotals.visitas,     // Visualizações únicas (views)
+                    playsUnicosVSL: vturbTotals.visuUnicaVSL,        // Plays únicos da VSL (VTurb)
+                    visualizacaoPage: 0,                             // Visualizações de PÁGINA (Facebook) - não VTurb
                     retencaoLeadVSL: vturbTotals.passagem,
                     engajamentoVSL: vturbTotals.connectRate,
                     retencaoPitchVSL: vturbTotals.passagem,
@@ -304,10 +304,10 @@ export default function DashboardPage() {
                 {/* Métricas VSL - APENAS analytics do VTurb */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <MetricCard
-                        title="Visualizações Únicas VSL"
-                        value={metrics?.visualizacaoPage.toString() || "0"}
+                        title="Views Únicos VSL"
+                        value={vturbTotals.viewsUnicosVSL?.toString() || "0"}
                         icon={Users}
-                        description="Analytics VTurb - Visualizações únicas por sessão"
+                        description="Analytics VTurb - Views únicos da VSL por sessão"
                     />
                     <MetricCard
                         title="Connect Rate"
@@ -330,7 +330,35 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Métricas Complementares */}
+                    {/* Métricas de Tráfego - Facebook/Meta Ads (aguardando integração) */}
+                    <MetricCard
+                        title="Visualizações de Página"
+                        value="0"
+                        icon={Users}
+                        description="Facebook Ads - Visualizações do site (aguardando integração)"
+                    />
+                    <MetricCard
+                        title="Cliques no Link"
+                        value="0"
+                        icon={MousePointerClick}
+                        description="Facebook Ads - Cliques do anúncio para o site (aguardando)"
+                    />
+                    <MetricCard
+                        title="CPC Médio"
+                        value="R$ 0,00"
+                        icon={Target}
+                        description="Facebook Ads - Custo por clique (aguardando)"
+                    />
+                    <MetricCard
+                        title="CPV Médio"
+                        value="R$ 0,00"
+                        icon={BarChart3}
+                        description="Facebook Ads - Custo por visualização (aguardando)"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Métricas Complementares de Vendas */}
                     <MetricCard
                         title="Ticket Médio Principal"
                         value={formatCurrency(metrics?.ticketMedio || 0)}
