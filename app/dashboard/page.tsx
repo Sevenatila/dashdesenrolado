@@ -73,39 +73,42 @@ export default function DashboardPage() {
                 const result = await response.json();
                 const analyticsData: DailyAnalytics[] = result.data || [];
 
-                // Agregar dados do analytics para o dashboard
-                const aggregatedMetrics = analyticsData.reduce((acc, item) => {
-                    return {
-                        vendas: acc.vendas + item.vendas,
-                        receitaGerada: acc.receitaGerada + (item.vendas * item.aov),
-                        totalItens: acc.totalItens + item.vendas,
-                        receitaTotalLiquida: acc.receitaTotalLiquida + (item.vendas * item.aov),
-                        valorGasto: acc.valorGasto + item.valorGasto,
-                        cliquesLink: acc.cliquesLink + item.cliques,
-                        playsUnicosVSL: acc.playsUnicosVSL + item.visuUnicaVSL,
-                        visualizacaoPage: acc.visualizacaoPage + item.visitas,
-                        cpa: item.vendas > 0 && item.valorGasto > 0 ? item.valorGasto / item.vendas : 0,
-                        ticketMedio: item.aov,
-                        ticketMedioTotal: item.aov,
-                        conversaoVSL: item.visuUnicaVSL > 0 ? (item.vendas / item.visuUnicaVSL) * 100 : 0,
-                        retencaoLeadVSL: item.passagem,
-                        engajamentoVSL: item.connectRate,
-                        retencaoPitchVSL: item.passagem,
-                        conversaocheckout: item.convCheckout,
-                        conversaoOrderBump: item.convOB1,
-                        conversaoBackredirect: 0,
-                        conversaoUpsell: item.convUpsell1,
-                        conversaoDownsell: item.downsell > 0 ? 10 : 0, // placeholder
-                        conversaoUpsell2: item.convUpsell2,
-                    };
-                }, {
-                    vendas: 0, receitaGerada: 0, totalItens: 0, receitaTotalLiquida: 0,
-                    valorGasto: 0, cliquesLink: 0, playsUnicosVSL: 0, visualizacaoPage: 0,
-                    cpa: 0, ticketMedio: 0, ticketMedioTotal: 0, conversaoVSL: 0,
-                    retencaoLeadVSL: 0, engajamentoVSL: 0, retencaoPitchVSL: 0,
-                    conversaocheckout: 0, conversaoOrderBump: 0, conversaoBackredirect: 0,
-                    conversaoUpsell: 0, conversaoDownsell: 0, conversaoUpsell2: 0
-                });
+                // Separar dados VTurb dos dados do banco
+                const vturbData = analyticsData.find(item => item.platform === 'vturb');
+                const bankData = analyticsData.find(item => item.platform === 'all');
+
+                console.log('🎯 VTurb Data:', vturbData);
+                console.log('🏦 Bank Data:', bankData);
+
+                // Usar principalmente dados VTurb, complementar com dados do banco
+                const aggregatedMetrics: DashboardMetrics = {
+                    // Vendas: somar VTurb + Banco
+                    vendas: (vturbData?.vendas || 0) + (bankData?.vendas || 0),
+                    receitaGerada: (vturbData ? vturbData.vendas * vturbData.aov : 0) + (bankData ? bankData.vendas * bankData.aov : 0),
+                    totalItens: (vturbData?.vendas || 0) + (bankData?.vendas || 0),
+                    receitaTotalLiquida: (vturbData ? vturbData.vendas * vturbData.aov : 0) + (bankData ? bankData.vendas * bankData.aov : 0),
+
+                    // Tráfego: usar apenas VTurb
+                    valorGasto: vturbData?.valorGasto || 0,
+                    cliquesLink: vturbData?.cliques || 0,
+                    playsUnicosVSL: vturbData?.visuUnicaVSL || 0,
+                    visualizacaoPage: vturbData?.visitas || 0,
+
+                    // Métricas calculadas: usar VTurb
+                    cpa: vturbData && vturbData.vendas > 0 && vturbData.valorGasto > 0 ? vturbData.valorGasto / vturbData.vendas : 0,
+                    ticketMedio: vturbData?.aov || bankData?.aov || 0,
+                    ticketMedioTotal: vturbData?.aov || bankData?.aov || 0,
+                    conversaoVSL: vturbData && vturbData.visuUnicaVSL > 0 ? (vturbData.vendas / vturbData.visuUnicaVSL) * 100 : 0,
+                    retencaoLeadVSL: vturbData?.passagem || 0,
+                    engajamentoVSL: vturbData?.connectRate || 0,
+                    retencaoPitchVSL: vturbData?.passagem || 0,
+                    conversaocheckout: vturbData?.convCheckout || 0,
+                    conversaoOrderBump: vturbData?.convOB1 || 0,
+                    conversaoBackredirect: 0,
+                    conversaoUpsell: vturbData?.convUpsell1 || 0,
+                    conversaoDownsell: 0,
+                    conversaoUpsell2: vturbData?.convUpsell2 || 0,
+                };
 
                 setMetrics(aggregatedMetrics);
             }
