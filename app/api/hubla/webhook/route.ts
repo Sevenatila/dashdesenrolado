@@ -25,7 +25,7 @@ async function processHublaV2Event(webhookData: any, idempotencyKey?: string): P
         }
       });
 
-      if (existingRecord && existingRecord.entityVersion > entityVersion) {
+      if (existingRecord && existingRecord.entityVersion && existingRecord.entityVersion > entityVersion) {
         console.log(`[Hubla] ⚠️ Ignoring older version ${entityVersion} for entity ${entityId}`);
         return;
       }
@@ -280,7 +280,6 @@ export async function POST(request: NextRequest) {
     // 1. Verificar IP do remetente
     const clientIP = request.headers.get('x-forwarded-for') ||
                     request.headers.get('x-real-ip') ||
-                    request.ip ||
                     'unknown';
 
     if (!isAllowedIP(clientIP)) {
