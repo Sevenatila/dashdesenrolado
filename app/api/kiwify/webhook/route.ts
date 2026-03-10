@@ -268,6 +268,12 @@ async function processKiwifyEvent(webhookData: KiwifyWebhookPayload): Promise<vo
         // TODO: Implementar lógica de assinatura em atraso
         break;
 
+      case 'chargeback':
+        console.log(`[Kiwify] 💳 Chargeback: ${orderId}`);
+        // TODO: Implementar lógica de chargeback
+        // Marcar venda como contestada ou criar registro de chargeback
+        break;
+
       default:
         console.log(`[Kiwify] ❓ Unknown event type: ${eventType}`);
         break;
@@ -317,12 +323,28 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Verificar se tem os campos obrigatórios
-    if (!webhookData.order_id || !webhookData.webhook_event_type) {
-      console.error('[Kiwify] ❌ Missing required fields');
+    if (!webhookData.order_id) {
+      console.error('[Kiwify] ❌ Missing required field: order_id');
       return NextResponse.json(
-        { error: 'Missing required fields: order_id or webhook_event_type' },
+        { error: 'Missing required field: order_id' },
         { status: 400 }
       );
+    }
+
+    // 3.1 Verificar se é um evento de carrinho abandonado (não tem webhook_event_type)
+    if (!webhookData.webhook_event_type) {
+      console.log(`[Kiwify] 🛒 Carrinho abandonado detected: ${webhookData.order_id}`);
+
+      // TODO: Implementar lógica de carrinho abandonado
+      // Por enquanto apenas logar e retornar sucesso
+
+      return NextResponse.json({
+        status: 'ok',
+        message: 'Carrinho abandonado processed successfully',
+        order_id: webhookData.order_id,
+        event_type: 'carrinho_abandonado',
+        processing_time: `${Date.now() - startTime}ms`
+      });
     }
 
     // 4. Processar evento de forma síncrona (Kiwify tem timeout de 40s)
@@ -382,7 +404,8 @@ export async function GET() {
         'billet_created',
         'subscription_canceled',
         'subscription_renewed',
-        'subscription_late'
+        'subscription_late',
+        'chargeback'
       ]
     },
     documentation: 'https://docs.kiwify.com.br/webhooks'
