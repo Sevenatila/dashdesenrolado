@@ -392,7 +392,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'Hubla webhook endpoint is active',
+    message: 'Hubla webhook endpoint is active (v2.0)',
     timestamp: new Date().toISOString(),
     security: {
       token_auth: false, // Temporariamente desabilitado
