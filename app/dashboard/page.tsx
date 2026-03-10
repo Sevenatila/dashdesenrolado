@@ -307,7 +307,7 @@ export default function DashboardPage() {
                         title="Visualizações Únicas VSL"
                         value={metrics?.visualizacaoPage.toString() || "0"}
                         icon={Users}
-                        description="Analytics VTurb - Views totais"
+                        description="Analytics VTurb - Visualizações únicas por sessão"
                     />
                     <MetricCard
                         title="Connect Rate"
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                         title="Plays Únicos VSL"
                         value={metrics?.playsUnicosVSL.toString() || "0"}
                         icon={MonitorPlay}
-                        description="Analytics VTurb - Plays iniciados"
+                        description="Analytics VTurb - Plays únicos iniciados"
                     />
                 </div>
 

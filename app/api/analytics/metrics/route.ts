@@ -76,8 +76,10 @@ export async function GET(request: NextRequest) {
                                 console.log(`[VTurb] Processando estatísticas de sessão do player ${player.name}`);
 
                                 // A API /sessions/stats retorna dados agregados diretos (não tem .data)
-                                const totalViews = sessionStats.total_viewed || 0;
+                                const totalViews = sessionStats.total_viewed || 0;  // Total de views (não único)
+                                const totalViewsUnique = sessionStats.total_viewed_session_uniq || sessionStats.total_viewed_device_uniq || 0; // Views únicas
                                 const totalStarts = sessionStats.total_started || 0;
+                                const totalStartsUnique = sessionStats.total_started_session_uniq || sessionStats.total_started_device_uniq || 0; // Starts únicos
                                 const totalFinished = sessionStats.total_finished || 0;
                                 const conversions = sessionStats.total_conversions || 0;
                                 const totalRevenue = sessionStats.total_amount_brl || 0;
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
                                 // Criar uma métrica única para todo o período
                                 const dateRange = `${startDate.split('T')[0]} a ${endDate.split('T')[0]}`;
 
-                                console.log(`[VTurb] Player ${player.name} - Views: ${totalViews}, Starts: ${totalStarts}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`);
+                                console.log(`[VTurb] Player ${player.name} - Views: ${totalViews}, Views Únicas: ${totalViewsUnique}, Starts: ${totalStarts}, Starts Únicos: ${totalStartsUnique}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`);
 
                                 const vturbMetric: DailyAnalytics = {
                                     date: new Date(endDate.split('T')[0] + 'T00:00:00'),
@@ -97,13 +99,13 @@ export async function GET(request: NextRequest) {
                                     valorGasto: 0,
                                     cliques: 0,
                                     cpc: 0,
-                                    visitas: totalViews, // Views totais do VTurb
+                                    visitas: totalViewsUnique, // Visualizações ÚNICAS do VTurb (não total)
                                     cpv: 0,
-                                    connectRate: totalViews > 0 && totalStarts > 0 ? (totalStarts / totalViews) * 100 : 0,
+                                    connectRate: totalViewsUnique > 0 && totalStartsUnique > 0 ? (totalStartsUnique / totalViewsUnique) * 100 : 0,
 
                                     // Métricas de Engajamento
-                                    passagem: totalStarts > 0 && totalFinished > 0 ? (totalFinished / totalStarts) * 100 : 0,
-                                    visuUnicaVSL: totalStarts, // Plays únicos
+                                    passagem: totalStartsUnique > 0 && totalFinished > 0 ? (totalFinished / totalStartsUnique) * 100 : 0,
+                                    visuUnicaVSL: totalStartsUnique, // Plays ÚNICOS (não total)
                                     cpvv: 0,
 
                                     // Métricas de Checkout
@@ -126,7 +128,7 @@ export async function GET(request: NextRequest) {
                                     convUpsell2: 0,
                                     downsell: 0,
 
-                                    observacoes: `VTurb (${dateRange}) - Views: ${totalViews}, Starts: ${totalStarts}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`
+                                    observacoes: `VTurb (${dateRange}) - Views Únicas: ${totalViewsUnique}, Plays Únicos: ${totalStartsUnique}, Finished: ${totalFinished}, Conversões: ${conversions}, Revenue: R$ ${totalRevenue}`
                                 };
 
                                 vslMetrics.push(vturbMetric);
