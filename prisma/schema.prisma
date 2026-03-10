@@ -72,6 +72,16 @@ model Sale {
   utmContent    String?
   utmTerm       String?
 
+  // Kiwify specific fields
+  productId     String?    // Kiwify Product ID
+  paymentMethod String?    // credit_card, pix, boleto
+  installments  Int?       // Number of installments
+  cardType      String?    // mastercard, visa, etc
+  cardLast4     String?    // Last 4 digits of card
+  storeId       String?    // Kiwify Store ID
+  orderRef      String?    // Kiwify Order Reference
+  subscriptionId String?   // For recurring payments
+
   // Relation to order bumps/upsells
   items         SaleItem[]
 }
