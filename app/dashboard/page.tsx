@@ -11,13 +11,17 @@ import {
     Target,
     BarChart3,
     ArrowRightLeft,
-    Percent
+    Percent,
+    RefreshCw
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import SyncButton from "@/components/dashboard/SyncButton";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
 import PlayerSelector from "@/components/dashboard/PlayerSelector";
-import { DailyAnalytics } from "@/types/analytics";
+import VSLFilter from "@/components/analytics/VSLFilter";
+import PlatformFilter from "@/components/analytics/PlatformFilter";
+import DateFilter from "@/components/analytics/DateFilter";
+import { DailyAnalytics, MetricsSummary } from "@/types/analytics";
 
 interface DashboardMetrics {
     vendas: number;
@@ -52,21 +56,36 @@ export default function DashboardPage() {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [taxSettings, setTaxSettings] = useState<TaxSettings>({ pixTax: 0, cardTax: 0 });
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [selectedVSL, setSelectedVSL] = useState<string | null>(null);
+    const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState({
-        start: "2026-03-09",
-        end: "2026-03-09"
+        start: new Date(new Date().setDate(new Date().getDate() - 7)),
+        end: new Date()
     });
 
     // Buscar dados da API analytics que já tem integração VTurb
     const fetchMetrics = async () => {
         try {
-            setIsLoading(true);
+            if (!isRefreshing) {
+                setIsLoading(true);
+            }
+            setIsRefreshing(true);
 
-            // FORÇAR data específica que sabemos que funciona
+            // Usar dateRange dinâmico ao invés de forçar data
             const params = new URLSearchParams({
-                startDate: "2026-03-09T00:00:00.000Z",
-                endDate: "2026-03-09T23:59:59.999Z"
+                startDate: dateRange.start.toISOString(),
+                endDate: dateRange.end.toISOString()
             });
+
+            // Adicionar filtros se selecionados
+            if (selectedVSL && selectedVSL !== 'all') {
+                params.append('vslId', selectedVSL);
+            }
+
+            if (selectedPlatform && selectedPlatform !== 'all') {
+                params.append('platform', selectedPlatform);
+            }
 
             console.log('🌐 Dashboard API URL:', `/api/analytics/metrics?${params}`);
             const response = await fetch(`/api/analytics/metrics?${params}`);
@@ -82,6 +101,15 @@ export default function DashboardPage() {
                 console.log('🎯 VTurb Analytics Data:', vturbData);
                 console.log('🏦 Vendas do Banco:', bankData);
                 console.log('📊 All Data:', analyticsData);
+
+                // FORÇAR valores para debug
+                if (vturbData) {
+                    console.log('🔥 VALORES REAIS VTURB:');
+                    console.log('   - visitas (views):', vturbData.visitas);
+                    console.log('   - visuUnicaVSL (plays):', vturbData.visuUnicaVSL);
+                    console.log('   - passagem (retenção):', vturbData.passagem);
+                    console.log('   - connectRate:', vturbData.connectRate);
+                }
 
                 // CORREÇÃO: Usar APENAS analytics de VSL do VTurb, vendas e tráfego de outras fontes
                 const aggregatedMetrics: DashboardMetrics = {
@@ -121,6 +149,7 @@ export default function DashboardPage() {
             console.error('Erro ao buscar métricas:', error);
         } finally {
             setIsLoading(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -135,13 +164,18 @@ export default function DashboardPage() {
         }
     };
 
+    // Buscar métricas quando filtros mudarem
     useEffect(() => {
-        fetchMetrics();
-        fetchTaxSettings();
-    }, [dateRange]);
+        const timer = setTimeout(() => {
+            fetchMetrics();
+        }, 500); // Debounce de 500ms para evitar muitas requisições
 
+        return () => clearTimeout(timer);
+    }, [dateRange, selectedVSL, selectedPlatform]);
+
+    // Buscar configurações iniciais
     useEffect(() => {
-        fetchMetrics();
+        fetchTaxSettings();
     }, []);
 
     const formatCurrency = (val: number) =>
@@ -166,13 +200,32 @@ export default function DashboardPage() {
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Métricas de Tomada de Decisão</h2>
                         <p className="text-sm text-gray-500">
-                            Período: {dateRange.start} até {dateRange.end} (com dados VTurb)
+                            {dateRange.start.toLocaleDateString('pt-BR')} até {dateRange.end.toLocaleDateString('pt-BR')}
+                            {selectedVSL && selectedVSL !== 'all' && ' • VSL filtrada'}
+                            {selectedPlatform && selectedPlatform !== 'all' && ' • Plataforma filtrada'}
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                        <PlayerSelector />
-                        <DateRangePicker />
-                        <SyncButton />
+                    <div className="flex flex-wrap items-center gap-3">
+                        <DateFilter
+                            dateRange={dateRange}
+                            onDateRangeChange={setDateRange}
+                        />
+                        <VSLFilter
+                            selectedVSL={selectedVSL}
+                            onVSLChange={setSelectedVSL}
+                        />
+                        <PlatformFilter
+                            selectedPlatform={selectedPlatform}
+                            onPlatformChange={setSelectedPlatform}
+                        />
+                        <button
+                            onClick={() => fetchMetrics()}
+                            disabled={isRefreshing}
+                            className="px-4 py-2 bg-blue-600 text-white border border-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+                        </button>
                     </div>
                 </div>
 
