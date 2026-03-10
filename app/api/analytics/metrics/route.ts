@@ -168,7 +168,8 @@ export async function GET(request: NextRequest) {
 
         // 2. SEMPRE buscar vendas diretamente do banco (usando timezone Hubla UTC-8)
             // Corrigir case-sensitivity do filtro de plataforma
-            const platformFilter = platform ? platform.toUpperCase() : undefined;
+            // Se platform é 'all' ou null/undefined, não filtrar (buscar todas)
+            const platformFilter = (platform && platform !== 'all') ? platform.toUpperCase() : undefined;
 
             const sales = await prisma.sale.findMany({
                 where: {

@@ -107,7 +107,7 @@ export default function DashboardPage() {
 
                 // Separar dados: analytics de vídeo do VTurb (pode ser múltiplos), vendas vêm do banco
                 const vturbDataArray = analyticsData.filter(item => item.platform === 'vturb');
-                const bankDataArray = analyticsData.filter(item => item.platform === 'all');
+                const bankDataArray = analyticsData.filter(item => item.platform !== 'vturb'); // Tudo que não é VTurb são vendas do banco
 
                 console.log('🎯 VTurb Analytics Data:', vturbDataArray.length, 'VSLs');
                 console.log('🏦 Vendas do Banco:', bankDataArray.length, 'registros');
