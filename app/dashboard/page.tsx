@@ -73,41 +73,43 @@ export default function DashboardPage() {
                 const result = await response.json();
                 const analyticsData: DailyAnalytics[] = result.data || [];
 
-                // Separar dados VTurb dos dados do banco
+                // Separar dados: APENAS analytics de vídeo do VTurb, vendas vêm do banco
                 const vturbData = analyticsData.find(item => item.platform === 'vturb');
                 const bankData = analyticsData.find(item => item.platform === 'all');
 
-                console.log('🎯 VTurb Data:', vturbData);
-                console.log('🏦 Bank Data:', bankData);
+                console.log('🎯 VTurb Analytics Data:', vturbData);
+                console.log('🏦 Vendas do Banco:', bankData);
 
-                // Usar principalmente dados VTurb, complementar com dados do banco
+                // CORREÇÃO: Usar APENAS analytics de VSL do VTurb, vendas e tráfego de outras fontes
                 const aggregatedMetrics: DashboardMetrics = {
-                    // Vendas: somar VTurb + Banco
-                    vendas: (vturbData?.vendas || 0) + (bankData?.vendas || 0),
-                    receitaGerada: (vturbData ? vturbData.vendas * vturbData.aov : 0) + (bankData ? bankData.vendas * bankData.aov : 0),
-                    totalItens: (vturbData?.vendas || 0) + (bankData?.vendas || 0),
-                    receitaTotalLiquida: (vturbData ? vturbData.vendas * vturbData.aov : 0) + (bankData ? bankData.vendas * bankData.aov : 0),
+                    // VENDAS: Apenas do banco (Hubla, Kiwify, etc)
+                    vendas: bankData?.vendas || 0,
+                    receitaGerada: bankData ? bankData.vendas * bankData.aov : 0,
+                    totalItens: bankData?.vendas || 0,
+                    receitaTotalLiquida: bankData ? bankData.vendas * bankData.aov : 0,
 
-                    // Tráfego: usar apenas VTurb
-                    valorGasto: vturbData?.valorGasto || 0,
-                    cliquesLink: vturbData?.cliques || 0,
+                    // TRÁFEGO: Meta Ads (manual ou API futura)
+                    valorGasto: 0, // Meta Ads
+                    cliquesLink: 0, // Meta Ads
+                    visualizacaoPage: 0, // Meta Ads ou manual
+
+                    // VSL ANALYTICS: APENAS do VTurb (o que você pediu)
                     playsUnicosVSL: vturbData?.visuUnicaVSL || 0,
-                    visualizacaoPage: vturbData?.visitas || 0,
-
-                    // Métricas calculadas: usar VTurb
-                    cpa: vturbData && vturbData.vendas > 0 && vturbData.valorGasto > 0 ? vturbData.valorGasto / vturbData.vendas : 0,
-                    ticketMedio: vturbData?.aov || bankData?.aov || 0,
-                    ticketMedioTotal: vturbData?.aov || bankData?.aov || 0,
-                    conversaoVSL: vturbData && vturbData.visuUnicaVSL > 0 ? (vturbData.vendas / vturbData.visuUnicaVSL) * 100 : 0,
                     retencaoLeadVSL: vturbData?.passagem || 0,
                     engajamentoVSL: vturbData?.connectRate || 0,
                     retencaoPitchVSL: vturbData?.passagem || 0,
-                    conversaocheckout: vturbData?.convCheckout || 0,
-                    conversaoOrderBump: vturbData?.convOB1 || 0,
+
+                    // MÉTRICAS CALCULADAS: Baseadas nos sistemas corretos
+                    cpa: 0, // Será: gastoMetaAds / vendas
+                    ticketMedio: bankData?.aov || 0,
+                    ticketMedioTotal: bankData?.aov || 0,
+                    conversaoVSL: 0, // Será: vendas / plays quando tiver Meta Ads
+                    conversaocheckout: bankData?.convCheckout || 0,
+                    conversaoOrderBump: bankData?.convOB1 || 0,
                     conversaoBackredirect: 0,
-                    conversaoUpsell: vturbData?.convUpsell1 || 0,
+                    conversaoUpsell: bankData?.convUpsell1 || 0,
                     conversaoDownsell: 0,
-                    conversaoUpsell2: vturbData?.convUpsell2 || 0,
+                    conversaoUpsell2: bankData?.convUpsell2 || 0,
                 };
 
                 setMetrics(aggregatedMetrics);
@@ -199,31 +201,31 @@ export default function DashboardPage() {
                     />
                 </div>
 
-                {/* Métricas VTurb em destaque */}
+                {/* Métricas VSL - APENAS analytics do VTurb */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <MetricCard
-                        title="Visualizações (VTurb)"
-                        value={metrics?.visualizacaoPage.toString() || "0"}
-                        icon={Users}
-                        description="Total de views da VSL"
-                    />
                     <MetricCard
                         title="Plays Únicos VSL"
                         value={metrics?.playsUnicosVSL.toString() || "0"}
                         icon={MonitorPlay}
-                        description="Plays iniciados (VTurb)"
+                        description="Analytics VTurb - Plays iniciados"
                     />
                     <MetricCard
                         title="Connect Rate"
                         value={`${metrics?.engajamentoVSL.toFixed(1) || 0}%`}
                         icon={Target}
-                        description="Plays / Views"
+                        description="Analytics VTurb - Plays/Views"
                     />
                     <MetricCard
                         title="Retenção VSL"
                         value={`${metrics?.retencaoLeadVSL.toFixed(1) || 0}%`}
                         icon={Percent}
-                        description="Taxa de finalização"
+                        description="Analytics VTurb - Taxa de finalização"
+                    />
+                    <MetricCard
+                        title="Cliques no Link"
+                        value={metrics?.cliquesLink.toString() || "0"}
+                        icon={MousePointerClick}
+                        description="Meta Ads (a configurar)"
                     />
                 </div>
 
@@ -256,47 +258,18 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Tráfego e Performance */}
-                    <MetricCard
-                        title="Cliques no Link"
-                        value={metrics?.cliquesLink.toString() || "0"}
-                        icon={MousePointerClick}
-                    />
+                    {/* Tráfego (Meta Ads - futuro) */}
                     <MetricCard
                         title="Visualizações da Página"
                         value={metrics?.visualizacaoPage.toString() || "0"}
                         icon={Users}
-                        description="Página de Destino"
+                        description="Meta Ads (a configurar)"
                     />
                     <MetricCard
                         title="Conversão VSL"
                         value={`${metrics?.conversaoVSL || 0}%`}
                         icon={Percent}
-                        description="Vendas / Plays"
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Métricas VSL (VTurb) */}
-                    <MetricCard
-                        title="Plays Únicos VSL"
-                        value={metrics?.playsUnicosVSL.toString() || "0"}
-                        icon={MonitorPlay}
-                    />
-                    <MetricCard
-                        title="Retenção Lead VSL"
-                        value={`${metrics?.retencaoLeadVSL || 0}%`}
-                        icon={MonitorPlay}
-                    />
-                    <MetricCard
-                        title="Engajamento VSL"
-                        value={`${metrics?.engajamentoVSL || 0}%`}
-                        icon={MonitorPlay}
-                    />
-                    <MetricCard
-                        title="Retenção Pitch VSL"
-                        value={`${metrics?.retencaoPitchVSL || 0}%`}
-                        icon={MonitorPlay}
+                        description="Vendas / Plays (será calculado)"
                     />
                 </div>
 
