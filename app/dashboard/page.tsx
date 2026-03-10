@@ -33,6 +33,7 @@ interface DashboardMetrics {
     valorGasto: number;
     cliquesLink: number;
     playsUnicosVSL: number;
+    viewsUnicosVSL: number;
     visualizacaoPage: number;
     cpa: number;
     ticketMedio: number;
@@ -171,6 +172,7 @@ export default function DashboardPage() {
 
                     // VSL ANALYTICS: Soma de TODAS as VSLs do VTurb
                     playsUnicosVSL: vturbTotals.visuUnicaVSL,        // Plays únicos da VSL (VTurb)
+                    viewsUnicosVSL: vturbTotals.viewsUnicosVSL || 0, // Views únicos da VSL (VTurb)
                     visualizacaoPage: 0,                             // Visualizações de PÁGINA (Facebook) - não VTurb
                     retencaoLeadVSL: vturbTotals.passagem,
                     engajamentoVSL: vturbTotals.connectRate,
@@ -243,14 +245,14 @@ export default function DashboardPage() {
     const summary = metrics ? {
         totalGasto: metrics.valorGasto,
         totalCliques: metrics.cliquesLink,
-        totalVisitas: metrics.visualizacaoPage + metrics.playsUnicosVSL,
+        totalVisitas: (metrics.viewsUnicosVSL || 0) + metrics.visualizacaoPage, // Views Únicos VSL + Visualizações de Página
         totalVendas: metrics.vendas,
         totalReceita: metrics.receitaTotalLiquida,
         cpcMedio: metrics.cliquesLink > 0 ? metrics.valorGasto / metrics.cliquesLink : 0,
-        cpvMedio: (metrics.visualizacaoPage + metrics.playsUnicosVSL) > 0 ? metrics.valorGasto / (metrics.visualizacaoPage + metrics.playsUnicosVSL) : 0,
+        cpvMedio: ((metrics.viewsUnicosVSL || 0) + metrics.visualizacaoPage) > 0 ? metrics.valorGasto / ((metrics.viewsUnicosVSL || 0) + metrics.visualizacaoPage) : 0,
         cpaMedio: metrics.cpa,
         aovMedio: metrics.ticketMedioTotal,
-        taxaConversaoGeral: (metrics.visualizacaoPage + metrics.playsUnicosVSL) > 0 ? (metrics.vendas / (metrics.visualizacaoPage + metrics.playsUnicosVSL)) * 100 : 0,
+        taxaConversaoGeral: ((metrics.viewsUnicosVSL || 0) + metrics.visualizacaoPage) > 0 ? (metrics.vendas / ((metrics.viewsUnicosVSL || 0) + metrics.visualizacaoPage)) * 100 : 0,
         roi: metrics.valorGasto > 0 ? ((metrics.receitaTotalLiquida - metrics.valorGasto) / metrics.valorGasto) * 100 : 0,
         roas: metrics.valorGasto > 0 ? metrics.receitaTotalLiquida / metrics.valorGasto : 0
     } : null;
@@ -412,9 +414,9 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <MetricCard
                             title="Views Únicos VSL"
-                            value="0"
+                            value={metrics?.viewsUnicosVSL?.toString() || "0"}
                             icon={Users}
-                            description="Analytics VTurb - Views únicos da VSL (aguardando implementação)"
+                            description="Analytics VTurb - Views únicos da VSL"
                         />
                         <MetricCard
                             title="Connect Rate"
