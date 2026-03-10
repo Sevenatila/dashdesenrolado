@@ -79,6 +79,7 @@ export default function DashboardPage() {
 
                 console.log('🎯 VTurb Analytics Data:', vturbData);
                 console.log('🏦 Vendas do Banco:', bankData);
+                console.log('📊 All Data:', analyticsData);
 
                 // CORREÇÃO: Usar APENAS analytics de VSL do VTurb, vendas e tráfego de outras fontes
                 const aggregatedMetrics: DashboardMetrics = {
@@ -94,10 +95,10 @@ export default function DashboardPage() {
                     visualizacaoPage: 0, // Meta Ads ou manual
 
                     // VSL ANALYTICS: APENAS do VTurb (o que você pediu)
-                    playsUnicosVSL: vturbData?.visuUnicaVSL || 0,
-                    retencaoLeadVSL: vturbData?.passagem || 0,
-                    engajamentoVSL: vturbData?.connectRate || 0,
-                    retencaoPitchVSL: vturbData?.passagem || 0,
+                    playsUnicosVSL: vturbData ? vturbData.visuUnicaVSL : 0,
+                    retencaoLeadVSL: vturbData ? vturbData.passagem : 0,
+                    engajamentoVSL: vturbData ? vturbData.connectRate : 0,
+                    retencaoPitchVSL: vturbData ? vturbData.passagem : 0,
 
                     // MÉTRICAS CALCULADAS: Baseadas nos sistemas corretos
                     cpa: 0, // Será: gastoMetaAds / vendas
