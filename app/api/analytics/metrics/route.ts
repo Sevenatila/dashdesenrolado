@@ -167,20 +167,23 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. SEMPRE buscar vendas diretamente do banco (usando timezone Hubla UTC-8)
+            // Corrigir case-sensitivity do filtro de plataforma
+            const platformFilter = platform ? platform.toUpperCase() : undefined;
+
             const sales = await prisma.sale.findMany({
                 where: {
                     createdAt: {
                         gte: hublaStartDate,  // Data ajustada para timezone Hubla UTC-8
                         lte: hublaEndDate     // Data ajustada para timezone Hubla UTC-8
                     },
-                    platform: platform || undefined
+                    platform: platformFilter
                 },
                 include: {
                     items: true  // Incluir order bumps/upsells
                 }
             });
 
-            console.log(`[Sales] Encontradas ${sales.length} vendas no período Hubla de ${hublaStartDate.toISOString()} a ${hublaEndDate.toISOString()}`);
+            console.log(`[Sales] Filtro plataforma: '${platformFilter}' | Encontradas ${sales.length} vendas no período Hubla de ${hublaStartDate.toISOString()} a ${hublaEndDate.toISOString()}`);
 
             // Agrupar vendas por data para criar métricas agregadas
             const salesByDate = new Map<string, typeof sales>();
@@ -199,7 +202,7 @@ export async function GET(request: NextRequest) {
                     date: new Date(endDateParam.split('T')[0] + 'T00:00:00'),
                     vslId: vslId || 'all',
                     vslName: 'Todos os VSLs',
-                    platform: platform || 'all',
+                    platform: platformFilter ? platformFilter.toLowerCase() : 'all',
                     valorGasto: 0,
                     cliques: 0,
                     cpc: 0,
@@ -247,7 +250,7 @@ export async function GET(request: NextRequest) {
                     date: new Date(endDateParam.split('T')[0] + 'T00:00:00'),
                     vslId: vslId || 'all',
                     vslName: 'Todos os VSLs',
-                    platform: platform || 'all',
+                    platform: platformFilter ? platformFilter.toLowerCase() : 'all',
 
                     // Métricas de Tráfego (Meta Ads não integrado ainda)
                     valorGasto: 0, // Meta Ads não integrado
