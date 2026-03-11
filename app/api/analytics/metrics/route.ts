@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
                         // Extrair dados dos resultados e ordenar por atividade
                         const validPlayers = playersWithActivity
                             .map(result => result.status === 'fulfilled' ? result.value : null)
-                            .filter(Boolean)
+                            .filter((item): item is NonNullable<typeof item> => Boolean(item))
                             .sort((a, b) => b.activity - a.activity) // VSLs com mais atividade primeiro
                             .slice(0, 20); // Pegar TOP 20 mais ativas
 
