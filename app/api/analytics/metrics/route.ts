@@ -64,9 +64,38 @@ export async function GET(request: NextRequest) {
                         const specificPlayer = players.find(p => p.id === vslId);
                         playersToProcess = specificPlayer ? [specificPlayer] : [];
                     } else {
-                        // Processar mais VSLs para capturar dados, mas com limite para evitar timeout
-                        // Aumentado para 20 VSLs para capturar mais dados da VTurb
-                        playersToProcess = players.slice(0, 20);
+                        // Priorizar VSLs com atividade recente
+                        console.log(`[VTurb] Priorizando VSLs ativas de ${players.length} total`);
+
+                        // Fazer uma verificação rápida de atividade para priorizar VSLs com dados
+                        const playersWithActivity = await Promise.allSettled(
+                            players.map(async (player) => {
+                                try {
+                                    const quickStats = await Promise.race([
+                                        vturb.getSessionStats(player.id, startDateParam.split('T')[0], endDateParam.split('T')[0]),
+                                        new Promise((_, reject) => setTimeout(() => reject(new Error('Quick timeout')), 3000))
+                                    ]) as any;
+
+                                    const activity = (quickStats?.total_viewed || 0) + (quickStats?.total_started || 0) + (quickStats?.total_conversions || 0);
+                                    return { player, activity, hasData: activity > 0 };
+                                } catch {
+                                    return { player, activity: 0, hasData: false };
+                                }
+                            })
+                        );
+
+                        // Extrair dados dos resultados e ordenar por atividade
+                        const validPlayers = playersWithActivity
+                            .map(result => result.status === 'fulfilled' ? result.value : null)
+                            .filter(Boolean)
+                            .sort((a, b) => b.activity - a.activity) // VSLs com mais atividade primeiro
+                            .slice(0, 20); // Pegar TOP 20 mais ativas
+
+                        playersToProcess = validPlayers.map(p => p.player);
+
+                        console.log(`[VTurb] Priorizadas ${playersToProcess.length} VSLs ativas de ${players.length} total`);
+                        const activeCount = validPlayers.filter(p => p.hasData).length;
+                        console.log(`[VTurb] ${activeCount} VSLs com dados encontradas`);
                     }
 
                     console.log(`[VTurb] Processando ${playersToProcess.length} players`);
