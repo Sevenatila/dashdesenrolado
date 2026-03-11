@@ -64,9 +64,9 @@ export async function GET(request: NextRequest) {
                         const specificPlayer = players.find(p => p.id === vslId);
                         playersToProcess = specificPlayer ? [specificPlayer] : [];
                     } else {
-                        // Processar todas as VSLs, mas com limite para evitar timeout
-                        // Limite de 10 VSLs por vez para garantir performance
-                        playersToProcess = players.slice(0, 10);
+                        // Processar mais VSLs para capturar dados, mas com limite para evitar timeout
+                        // Aumentado para 20 VSLs para capturar mais dados da VTurb
+                        playersToProcess = players.slice(0, 20);
                     }
 
                     console.log(`[VTurb] Processando ${playersToProcess.length} players`);
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
                             const sessionStats = await Promise.race([
                                 eventsPromise,
-                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 10000))
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout eventos')), 8000))
                             ]) as any;
 
                             if (sessionStats && sessionStats.total_viewed !== undefined) {
