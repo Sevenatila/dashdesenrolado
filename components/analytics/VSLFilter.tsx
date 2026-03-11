@@ -31,6 +31,7 @@ export default function VSLFilter({ selectedVSL, onVSLChange }: VSLFilterProps) 
             // Lista padrão como fallback
             const defaultOptions = [
                 { id: 'all', name: 'Todos os VSLs', platform: '' },
+                { id: '69921cdd92e29505e061e647', name: 'MINI VSL REEDIÇÃO QUIZ CDR (ATIVA)', platform: 'VTurb' },
                 { id: 'vsl_cdr', name: 'CDR - Como Destruir Relacionamentos', platform: 'VTurb' },
                 { id: 'vsl_reconquista', name: 'Reconquista Definitiva', platform: 'VTurb' },
                 { id: 'vsl_ex_volta', name: 'Faz a Ex Voltar em 7 Dias', platform: 'VTurb' },
